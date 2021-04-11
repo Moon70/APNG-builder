@@ -7,6 +7,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterOutputStream;
 
 import lunartools.apng.chunks.Chunk;
 import lunartools.apng.chunks.ChunkFactory;
@@ -39,21 +41,25 @@ public class Png {
 	private ArrayList<Png> listPng=new ArrayList<Png>();
 	private Chunk_IHDR chunk_IHDR;
 	private int delay;
-	
+	private int offsetX;
+	private int offsetY;
+
+	Png() {}
+
 	Png(byte[] pngAsBytearray) {
 		this.baPng=pngAsBytearray;
 		if(!isPngFile(baPng)){
 			throw new RuntimeException("Not a PNG");
 		}
 	}
-	
+
 	void parsePng(){
 		try {
 			chunklist=new ArrayList<Chunk>();
-			
+
 			int index=PNG_SIGNATURE.length;
 			ChunkFactory chunkFactory=new ChunkFactory();
-			
+
 			Chunk chunk;
 			do {
 				chunk=chunkFactory.createChunk(baPng,index);
@@ -68,22 +74,52 @@ public class Png {
 		}
 	}
 
+	byte[] getImagedata() {
+		ByteArrayOutputStream baos=new ByteArrayOutputStream();
+		try {
+			for(int i=0;i<chunklist.size();i++) {
+				if(chunklist.get(i) instanceof Chunk_IDAT) {
+					Chunk_IDAT chunk=(Chunk_IDAT)chunklist.get(i);
+					baos.write(chunk.getChunkData());
+				}
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Error reading imagedata",e);
+		}
+		return baos.toByteArray();
+	}
+
+	private byte[] getDecodedImagedata() {
+		ByteArrayOutputStream baos=new ByteArrayOutputStream();
+		try {
+			Inflater inflater=new Inflater();
+			InflaterOutputStream inflaterOutputStream=new InflaterOutputStream(baos,inflater);
+			inflaterOutputStream.write(getImagedata());
+			inflaterOutputStream.finish();
+			inflaterOutputStream.flush();
+			inflaterOutputStream.close();
+		} catch (Exception e) {
+			throw new RuntimeException("Error reading imagedata",e);
+		}
+		return baos.toByteArray();
+	}
+
 	public void addPng(Png png) {
 		listPng.add(png);
 	}
-	
+
 	public void savePng(File file) throws FileNotFoundException, IOException {
 		try(FileOutputStream fos=new FileOutputStream(file)){
 			writePngToStream(fos);
 		}
 	}
-	
+
 	public byte[] toByteArray() throws IOException {
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();
 		writePngToStream(baos);
 		return baos.toByteArray();
 	}
-	
+
 	private void writePngToStream(OutputStream outputStream) throws IOException {
 		ArrayList<Chunk> chunklistWork=chunklist;
 		if(listPng.size()>0) {
@@ -96,7 +132,7 @@ public class Png {
 			outputStream.write(chunk.toByteArray());
 		}
 	}
-	
+
 	private void addApngChunks(ArrayList<Chunk> chunklist) {
 		int fcTL_sequenceNumber=0;
 		Chunk chunk_acTL=new Chunk_acTL(listPng.size()+1,0);
@@ -109,7 +145,7 @@ public class Png {
 				break;
 			}
 		}
-		
+
 		int index_IEND;
 		for(index_IEND=0;index_IEND<chunklist.size();index_IEND++) {
 			if(chunklist.get(index_IEND) instanceof Chunk_IEND) {
@@ -120,7 +156,7 @@ public class Png {
 		for(int i=0;i<listPng.size();i++) {
 			Png png=listPng.get(i);
 			ArrayList<Chunk_IDAT> arraylistIdatChunks=png.getAllIdatChunks();
-			chunk_fcTL=new Chunk_fcTL(++fcTL_sequenceNumber,png.getWidth(),png.getHeight(),0,0,png.getDelay(),1000,Chunk_fcTL.APNG_DISPOSE_OP_NONE,Chunk_fcTL.APNG_BLEND_OP_SOURCE);
+			chunk_fcTL=new Chunk_fcTL(++fcTL_sequenceNumber,png.getWidth(),png.getHeight(),png.offsetX,png.offsetY,png.getDelay(),1000,Chunk_fcTL.APNG_DISPOSE_OP_NONE,Chunk_fcTL.APNG_BLEND_OP_SOURCE);
 			chunklist.add(index_IEND++, chunk_fcTL);
 			for(int x=0;x<arraylistIdatChunks.size();x++) {
 				Chunk_IDAT chunk_IDAT=arraylistIdatChunks.get(x);
@@ -128,7 +164,7 @@ public class Png {
 				chunklist.add(index_IEND++, chunk_fdAT);
 			}
 		}
-		
+
 	}
 
 	private ArrayList<Chunk_IDAT> getAllIdatChunks(){
@@ -140,21 +176,34 @@ public class Png {
 		}
 		return arraylistIdatChunks;
 	}
-	
+
 	public int getWidth() {
 		if(chunk_IHDR==null) {
 			throw new RuntimeException("no png parsed yet");
 		}
 		return chunk_IHDR.getWidth();
 	}
-	
+
 	public int getHeight() {
 		if(chunk_IHDR==null) {
 			throw new RuntimeException("no png parsed yet");
 		}
 		return chunk_IHDR.getHeight();
 	}
-	
+
+	public int getOffsetX() {
+		return offsetX;
+	}
+
+	public int getOffsetY() {
+		return offsetY;
+	}
+
+	public void setOffset(int offsetX, int offsetY) {
+		this.offsetX=offsetX;
+		this.offsetY=offsetY;
+	}
+
 	public void setDelay(int delay) {
 		this.delay=delay;
 	}
@@ -162,7 +211,7 @@ public class Png {
 	private int getDelay() {
 		return delay;
 	}
-	
+
 	private static boolean isPngFile(byte[] baPng) {
 		return compareBytes(baPng, 0, PNG_SIGNATURE);
 	}
@@ -174,6 +223,31 @@ public class Png {
 			}
 		}
 		return true;
+	}
+
+	public void addChunk(Chunk chunk) {
+		if(chunklist==null) {
+			chunklist=new ArrayList<Chunk>();
+		}
+		chunklist.add(chunk);
+		if(chunk instanceof Chunk_IHDR) {
+			chunk_IHDR=(Chunk_IHDR)chunk;
+		}
+	}
+
+	@Override
+	public String toString() {
+		StringBuffer sb=new StringBuffer();
+		for(int i=0;i<chunklist.size();i++) {
+			sb.append("chunk "+i+": ");
+			sb.append(chunklist.get(i).toString());
+			sb.append("\n");
+		}
+		return sb.toString();
+	}
+
+	void printIdatDetails() {
+		getImagedata();
 	}
 
 }

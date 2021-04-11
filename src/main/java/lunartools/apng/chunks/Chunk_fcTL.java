@@ -5,7 +5,12 @@ import java.io.IOException;
 
 import lunartools.apng.ByteTools;
 
-/** APNG Frame Control Chunk */
+/**
+ * APNG Frame Control Chunk.
+ * 
+ * @see <a href="https://wiki.mozilla.org/APNG_Specification#.60fcTL.60:_The_Frame_Control_Chunk">APNG Specification</a>
+ * @author Thomas Mattel
+ */
 public class Chunk_fcTL extends Chunk{
 	public static final String TYPE="fcTL";
 	private static final int LENGTH_CHUNKDATA=26;
@@ -23,7 +28,7 @@ public class Chunk_fcTL extends Chunk{
 	private static final int OFFSET_DELAY_DEN=DATAOFFSET+		22;
 	private static final int OFFSET_DISPOSE_OP=DATAOFFSET+		24;
 	private static final int OFFSET_BLEND_OP=DATAOFFSET+		25;
-	
+
 	Chunk_fcTL(byte[] png, Integer index,Integer length) {
 		super(png, index,length);
 	}
@@ -95,7 +100,7 @@ public class Chunk_fcTL extends Chunk{
 	private int getBlendOp() {
 		return (int)ByteTools.bytearrayToByte(data,getIndex()+OFFSET_BLEND_OP);
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuffer sb=new StringBuffer();
@@ -109,10 +114,9 @@ public class Chunk_fcTL extends Chunk{
 		sb.append("\n\t\tdelay den="+getDelayDen());
 		sb.append("\n\t\tdispose op="+getDisposeOp());
 		sb.append("\n\t\tblend op="+getBlendOp());
-		sb.append("\n\t\tCHECKSUM="+getChecksum());
-		
+
 		sb.append("\n");
 		return sb.toString();
 	}
-	
+
 }

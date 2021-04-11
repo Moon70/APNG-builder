@@ -5,26 +5,28 @@ import java.util.zip.CRC32;
 
 import lunartools.apng.ByteTools;
 
-/*
- * PNG reference: https://www.w3.org/TR/PNG
- * APNG reference: https://wiki.mozilla.org/APNG_Specification
- * |LENGTH (4 bytes) | CHUNK TYPE (4 bytes) | CHUNK DATA (0 to x bytes) | CRC (4 bytes)|
+/**
+ * An (A)PNG chunk of a PNG file.
+ * 
+ * @see <a href="https://www.w3.org/TR/PNG">Portable Network Graphics (PNG) Specification (Second Edition)</a>
+ * @see <a href="https://wiki.mozilla.org/APNG_Specification">APNG Specification</a>
+ * @author Thomas Mattel
  */
 public abstract class Chunk {
 	public static final int LENGTH_SIZEINBYTES=4;
 	public static final int CHUNKTYPE_SIZEINBYTES=4;
 	public static final int CRC_SIZEINBYTES=4;
 	public static final int DATAOFFSET=LENGTH_SIZEINBYTES+CHUNKTYPE_SIZEINBYTES;
-//	public static final int LENGTH_INDEX=0;
+	//	public static final int LENGTH_INDEX=0;
 	public static final int CHUNKTYPE_INDEX=4;
-//	public static final int CHUNKDATA_INDEX=8;
-	
+	//	public static final int CHUNKDATA_INDEX=8;
+
 	byte[] data;
 	private int index;
 	private int length;
 
 	Chunk() {}
-	
+
 	Chunk(byte[] png, Integer index,Integer length) {
 		this.data=png;
 		this.index=index;
@@ -33,37 +35,37 @@ public abstract class Chunk {
 			throw new RuntimeException("CRC error!");
 		}
 	}
-	
+
 	public int getChunkLength() {
 		return Chunk.LENGTH_SIZEINBYTES+Chunk.CHUNKTYPE_SIZEINBYTES+length+Chunk.CRC_SIZEINBYTES;
 	}
-	
+
 	int getDataLength() {
 		return length;
 	}
-	
+
 	void setDataLength(int length) {
 		this.length=length;
 	}
-	
+
 	int getIndex() {
 		return index;
 	}
-	
+
 	private boolean isCrcCorrect() {
 		long crc32=getCRC();
 		long crc32Calculated=calculateCRC();
 		return crc32==crc32Calculated;
 	}
-	
+
 	/**
 	 * @return The CHUNK DATA section of this chunk
 	 */
-	byte[] getChunkData() {
+	public byte[] getChunkData() {
 		int offset=index+LENGTH_SIZEINBYTES+CHUNKTYPE_SIZEINBYTES;
 		return Arrays.copyOfRange(data, offset, offset+length);
 	}
-	
+
 	/**
 	 * @return The complete ByteArray of this chunk
 	 */
@@ -74,7 +76,7 @@ public abstract class Chunk {
 		}
 		return data;
 	}
-	
+
 	/**
 	 * A four-byte CRC (Cyclic Redundancy Code) calculated on the preceding bytes in the chunk, including the chunk type field and chunk data fields, but not including the length field. The CRC can be used to check for corruption of the data.
 	 * The CRC is always present, even for chunks containing no data.
@@ -87,19 +89,13 @@ public abstract class Chunk {
 		crc32.update(data, index+LENGTH_SIZEINBYTES,length+CHUNKTYPE_INDEX);
 		return crc32.getValue();
 	}
-	
+
 	private long getCRC() {
 		return ByteTools.bytearrayToLongword(data, calcOffsetOfCrc());
 	}
-	
+
 	private int calcOffsetOfCrc() {
 		return index+LENGTH_SIZEINBYTES+CHUNKTYPE_SIZEINBYTES+length;
 	}
-	
-	//TODO: remove method
-	public String getChecksum() {
-		CRC32 crc32=new CRC32();
-		crc32.update(toByteArray());
-		return Long.toHexString(crc32.getValue());
-	}
+
 }

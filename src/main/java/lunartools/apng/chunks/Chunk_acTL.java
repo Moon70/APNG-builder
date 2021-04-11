@@ -5,7 +5,12 @@ import java.io.IOException;
 
 import lunartools.apng.ByteTools;
 
-/** APNG Animation Control Chunk */
+/** 
+ * APNG Animation Control Chunk.
+ * 
+ * @see <a href="https://wiki.mozilla.org/APNG_Specification#.60acTL.60:_The_Animation_Control_Chunk">APNG Specification</a>
+ * @author Thomas Mattel
+ */
 public class Chunk_acTL extends Chunk{
 	public static final String TYPE="acTL";
 	private static final int LENGTH_CHUNKDATA=8;
@@ -15,7 +20,7 @@ public class Chunk_acTL extends Chunk{
 	Chunk_acTL(byte[] png, Integer index,Integer length) {
 		super(png, index,length);
 	}
-	
+
 	public Chunk_acTL(Integer num_frames,Integer num_plays) {
 		int length=LENGTH_CHUNKDATA;
 		setDataLength(length);
@@ -31,18 +36,18 @@ public class Chunk_acTL extends Chunk{
 			throw new RuntimeException("Could not create "+TYPE+" bytearray",e);
 		}
 	}
-	
+
 	private int getNumberOfFrames() {
 		return (int)ByteTools.bytearrayToLongword(data,getIndex()+OFFSET_NUM_FRAMES);
 	}
-	
+
 	private int getNumberOfPlays() {
 		return (int)ByteTools.bytearrayToLongword(data,getIndex()+OFFSET_NUM_PLAYS);
 	}
-	
+
 	@Override
 	public String toString() {
-		return TYPE+": length="+getDataLength()+", num_frames="+getNumberOfFrames()+", num_plays="+getNumberOfPlays()+", CHECKSUM="+getChecksum();
+		return TYPE+": length="+getDataLength()+", num_frames="+getNumberOfFrames()+", num_plays="+getNumberOfPlays();
 	}
-	
+
 }
