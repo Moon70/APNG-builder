@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>lunartools</groupId>
 	<artifactId>apngbuilder</artifactId>
-	<version>0.2-SNAPSHOT</version>
+	<version>0.3-SNAPSHOT</version>
 	<name>APNG Builder</name>
 	<description>Creates a APNG (animated PNG) file from a series of single images</description>
 	<properties>
@@ -10,6 +10,14 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.source>1.8</maven.compiler.source>
 	</properties>
+	<dependencies>
+		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
+		<dependency>
+		    <groupId>org.slf4j</groupId>
+		    <artifactId>slf4j-api</artifactId>
+		    <version>1.7.30</version>
+		</dependency>
+	</dependencies>
 	<distributionManagement>
 		<repository>
 			<id>github</id>

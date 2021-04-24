@@ -1,6 +1,5 @@
 package lunartools.pngidatcodec;
 
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 
 /**
@@ -10,13 +9,7 @@ import java.io.ByteArrayOutputStream;
  */
 public class PngEncoder {
 
-	public byte[] encodePng(BufferedImage bufferedImage) throws Exception {
-		int width=bufferedImage.getWidth();
-		int height=bufferedImage.getHeight();
-		return encodePng(ImageTools.getRgbBytesFromBufferedImage(bufferedImage),width,height);
-	}
-
-	public byte[] encodePng(byte[] data, int width, int height) throws Exception {
+	public byte[] encodePng(byte[] data, int width, int height, int bytesPerPixel) throws Exception {
 		FilterScore filterScore=new FilterScore4();
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();
 		byte[] baLine;
@@ -24,44 +17,48 @@ public class PngEncoder {
 		int scoreLine;
 		byte[] baNext;
 		int scoreNext;
-		int bytesPerPixel=3;
 		int imageBytesInLine=width*bytesPerPixel;
 		for(int y=0;y<height;y++) {
 			int offset=y*imageBytesInLine;
-			baLine=encodeType4(data,offset,imageBytesInLine,y,bytesPerPixel);
-			typeLine=4;
-			scoreLine=filterScore.calcScore(baLine);
-
-			baNext=encodeType3(data,offset,imageBytesInLine,y,bytesPerPixel);
-			scoreNext=filterScore.calcScore(baNext);
-			if(scoreNext<scoreLine) {
-				scoreLine=scoreNext;
-				baLine=baNext;
-				typeLine=3;
-			}
-
-			baNext=encodeType2(data,offset,imageBytesInLine,y,bytesPerPixel,width);
-			scoreNext=filterScore.calcScore(baNext);
-			if(scoreNext<scoreLine) {
-				scoreLine=scoreNext;
-				baLine=baNext;
-				typeLine=2;
-			}
-
-			baNext=encodeType1(data,offset,imageBytesInLine,bytesPerPixel);
-			scoreNext=filterScore.calcScore(baNext);
-			if(scoreNext<scoreLine) {
-				scoreLine=scoreNext;
-				baLine=baNext;
-				typeLine=1;
-			}
-
-			baNext=encodeType0(data,offset,imageBytesInLine);
-			scoreNext=filterScore.calcScore(baNext);
-			if(scoreNext<scoreLine) {
-				scoreLine=scoreNext;
-				baLine=baNext;
+			if(bytesPerPixel==1) {
+				baLine=encodeType0(data,offset,imageBytesInLine);
 				typeLine=0;
+			}else {
+				baLine=encodeType4(data,offset,imageBytesInLine,y,bytesPerPixel);
+				typeLine=4;
+				scoreLine=filterScore.calcScore(baLine);
+
+				baNext=encodeType3(data,offset,imageBytesInLine,y,bytesPerPixel);
+				scoreNext=filterScore.calcScore(baNext);
+				if(scoreNext<scoreLine) {
+					scoreLine=scoreNext;
+					baLine=baNext;
+					typeLine=3;
+				}
+
+				baNext=encodeType2(data,offset,imageBytesInLine,y,bytesPerPixel,width);
+				scoreNext=filterScore.calcScore(baNext);
+				if(scoreNext<scoreLine) {
+					scoreLine=scoreNext;
+					baLine=baNext;
+					typeLine=2;
+				}
+
+				baNext=encodeType1(data,offset,imageBytesInLine,bytesPerPixel);
+				scoreNext=filterScore.calcScore(baNext);
+				if(scoreNext<scoreLine) {
+					scoreLine=scoreNext;
+					baLine=baNext;
+					typeLine=1;
+				}
+
+				baNext=encodeType0(data,offset,imageBytesInLine);
+				scoreNext=filterScore.calcScore(baNext);
+				if(scoreNext<scoreLine) {
+					scoreLine=scoreNext;
+					baLine=baNext;
+					typeLine=0;
+				}
 			}
 
 			//System.out.println("line "+y+" "+typeLine+" "+scoreLine);
@@ -131,7 +128,7 @@ public class PngEncoder {
 
 			xx-=(a+b)>>1;
 
-			ba[x]=(byte)xx;
+				ba[x]=(byte)xx;
 		}
 		return ba;
 	}

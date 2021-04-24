@@ -66,4 +66,13 @@ public class ByteTools {
 		return byte0;
 	}
 
+	public static boolean compareBytes(byte[] bytearray1,byte[] bytearray2,int offsetBytearray2) {
+		for(int i=0;i<bytearray1.length;i++) {
+			if(bytearray2[offsetBytearray2+i]!=bytearray1[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 }

@@ -37,6 +37,25 @@ public class ImageTools {
 		}
 	}
 
+	private static int[] changeByteBGRtoIntRGB(byte[] data) {
+		int[] dataInt=new int[data.length/3];
+		int rgb;
+		int b;
+		for(int i=0;i<data.length;i+=3) {
+			b=data[i+2];
+			if(b<0) b+=256;
+			rgb=b<<16;
+			b=data[i+1];
+			if(b<0) b+=256;
+			rgb+=b<<8;
+			b=data[i];
+			if(b<0) b+=256;
+			rgb+=b;
+			dataInt[i/3]=rgb;
+		}
+		return dataInt;
+	}
+
 	public static BufferedImage createBufferedImageFromFile(File file) {
 		Image image=Toolkit.getDefaultToolkit().getImage(file.getAbsolutePath());
 
@@ -52,8 +71,8 @@ public class ImageTools {
 
 		int width=image.getWidth(null);
 		int height=image.getHeight(null);
-		//		BufferedImage bufferedImage=new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
-		BufferedImage bufferedImage=new BufferedImage(width,height,BufferedImage.TYPE_3BYTE_BGR);
+		BufferedImage bufferedImage=new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
+		//BufferedImage bufferedImage=new BufferedImage(width,height,BufferedImage.TYPE_3BYTE_BGR);
 		bufferedImage.getGraphics().drawImage(image,0,0,jframe);
 		return bufferedImage;
 	}
@@ -68,6 +87,23 @@ public class ImageTools {
 			byte[] byteImagedata=((DataBufferByte)databuffer).getData().clone();
 			changeByteBGRtoByteRGB(byteImagedata);
 			return byteImagedata;
+		}else {
+			throw new RuntimeException("databuffer not supported: "+databuffer.getClass().getName());
+		}
+	}
+
+	public static int[] getRgbIntsFromBufferedImage(BufferedImage bufferedImage) {
+		DataBuffer databuffer=bufferedImage.getRaster().getDataBuffer();
+		if(databuffer instanceof DataBufferInt) {
+			int[] intImagedata=((DataBufferInt)databuffer).getData();
+			for(int i=0;i<intImagedata.length;i++) {
+				intImagedata[i]=intImagedata[i]&0xffffff;
+			}
+			return intImagedata;
+		}else if(databuffer instanceof DataBufferByte) {
+			byte[] byteImagedata=((DataBufferByte)databuffer).getData().clone();
+			int[] intImagedata=changeByteBGRtoIntRGB(byteImagedata);
+			return intImagedata;
 		}else {
 			throw new RuntimeException("databuffer not supported: "+databuffer.getClass().getName());
 		}
