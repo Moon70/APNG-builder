@@ -14,6 +14,14 @@ import javax.swing.JFrame;
 
 public class ImageTools {
 
+	public static byte[] changeIntGreyscaleToByteGreyscale(int[] intbuffer) {
+		byte[] bytes=new byte[intbuffer.length];
+		for(int i=0;i<intbuffer.length;i++) {
+			bytes[i]=(byte)(intbuffer[i]&0xff);
+		}
+		return bytes;
+	}
+
 	public static byte[] changeIntRGBtoByteRGB(int[] intbuffer) {
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();
 		for(int i=0;i<intbuffer.length;i++) {

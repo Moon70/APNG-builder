@@ -20,13 +20,36 @@ public class Chunk_tRNS extends Chunk{
 	private static final int OFFSET_RED=DATAOFFSET+				0;
 	private static final int OFFSET_GREEN=DATAOFFSET+			2;
 	private static final int OFFSET_BLUE=DATAOFFSET+			4;
+	private static final int OFFSET_GREY=DATAOFFSET+			0;
 
 	private int colorType;
-	
+
 	Chunk_tRNS(byte[] png, Integer index,Integer length) {
 		super(png, index,length);
 	}
-	
+
+	/**
+	 * Creates a tRNS Chunk for colour type 0 (greyscale)
+	 * 
+	 * @param grey
+	 */
+	public Chunk_tRNS(int grey) {
+		colorType=Chunk_IHDR.COLOURTYPE_GREYSCALE;
+		int length=2;
+		setDataLength(length);
+		try {
+			ByteArrayOutputStream baos=new ByteArrayOutputStream();
+			baos.write(ByteTools.longwordToBytearray(length));
+			baos.write(TYPE.getBytes());
+			baos.write(ByteTools.wordToBytearray(grey & 0xff));
+
+			baos.write(ByteTools.longwordToBytearray(0));//CRC, calculated later
+			data=baos.toByteArray();
+		} catch (IOException e) {
+			throw new RuntimeException("Could not create "+TYPE+" bytearray",e);
+		}
+	}
+
 	/**
 	 * Creates a tRNS Chunk for colour type 2 (truecolour)
 	 * 
@@ -77,22 +100,30 @@ public class Chunk_tRNS extends Chunk{
 	}
 
 	public int getTransparentColour() {
-		if(colorType!=Chunk_IHDR.COLOURTYPE_TRUECOLOUR) {
-			throw new RuntimeException("non a truecolour tRNS chunk!");
+		switch(colorType) {
+		case Chunk_IHDR.COLOURTYPE_GREYSCALE:
+			int grey=(int)ByteTools.bytearrayToWord(data,getIndex()+OFFSET_GREY);
+			return (grey<<16)|(grey<<8)|grey;
+		case Chunk_IHDR.COLOURTYPE_TRUECOLOUR:
+			int red=(int)ByteTools.bytearrayToWord(data,getIndex()+OFFSET_RED);
+			int green=(int)ByteTools.bytearrayToWord(data,getIndex()+OFFSET_GREEN);
+			int blue=(int)ByteTools.bytearrayToWord(data,getIndex()+OFFSET_BLUE);
+			return (red<<16)|(green<<8)|blue;
+		default:
+			throw new RuntimeException("neither greyscale nor truecolour tRNS chunk!");
 		}
-		int red=(int)ByteTools.bytearrayToWord(data,getIndex()+OFFSET_RED);
-		int green=(int)ByteTools.bytearrayToWord(data,getIndex()+OFFSET_GREEN);
-		int blue=(int)ByteTools.bytearrayToWord(data,getIndex()+OFFSET_BLUE);
-		return (red<<16)|(green<<8)|blue;
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuffer sb=new StringBuffer();
 		sb.append(TYPE+": length="+getDataLength());
 		switch(colorType) {
+		case Chunk_IHDR.COLOURTYPE_GREYSCALE:
+			sb.append(", transparent greyscale colour="+getTransparentColour());
+			break;
 		case Chunk_IHDR.COLOURTYPE_TRUECOLOUR:
-			sb.append(", TrueColour-transparentColour="+getTransparentColour());
+			sb.append(", transparent truecolour="+getTransparentColour());
 			break;
 		case Chunk_IHDR.COLOURTYPE_INDEXEDCOLOUR:
 			sb.append(", palette-NumberOfEntries="+getDataLength());
@@ -102,5 +133,5 @@ public class Chunk_tRNS extends Chunk{
 		}
 		return sb.toString();
 	}
-	
+
 }

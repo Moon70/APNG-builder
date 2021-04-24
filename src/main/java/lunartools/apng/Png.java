@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterOutputStream;
@@ -20,6 +21,8 @@ import lunartools.apng.chunks.Chunk_IHDR;
 import lunartools.apng.chunks.Chunk_acTL;
 import lunartools.apng.chunks.Chunk_fcTL;
 import lunartools.apng.chunks.Chunk_fdAT;
+import lunartools.apng.chunks.Chunk_tEXt;
+import lunartools.apng.chunks.Chunk_zEXt;
 
 /*
  * PNG reference: https://www.w3.org/TR/PNG
@@ -42,9 +45,9 @@ public class Png {
 	private Png firstPng=this;
 	private Png previousPng;
 	private Color unusedColour;
-	
+
 	private boolean flagImageDataProcessed;
-	
+
 	byte[] baPng;
 	private ArrayList<Chunk> chunklist;
 	private ArrayList<Png> listPng=new ArrayList<Png>();
@@ -63,18 +66,18 @@ public class Png {
 		this.builder=builder;
 		this.imageData=new ImageData(this,fileImage);
 	}
-	
-//	/**
-//	 * Creates a Png object from the given bytearray, which must contain PNG data.
-//	 * 
-//	 * @param pngAsBytearray
-//	 */
-//	Png(byte[] pngAsBytearray) {
-//		this.baPng=pngAsBytearray;
-//		if(!isPngFile(baPng)){
-//			throw new RuntimeException("Not a PNG");
-//		}
-//	}
+
+	//	/**
+	//	 * Creates a Png object from the given bytearray, which must contain PNG data.
+	//	 * 
+	//	 * @param pngAsBytearray
+	//	 */
+	//	Png(byte[] pngAsBytearray) {
+	//		this.baPng=pngAsBytearray;
+	//		if(!isPngFile(baPng)){
+	//			throw new RuntimeException("Not a PNG");
+	//		}
+	//	}
 
 	private void processImageData() {
 		if(flagImageDataProcessed) {
@@ -95,7 +98,7 @@ public class Png {
 			throw new RuntimeException("error processing image data",e);
 		}
 	}
-	
+
 	private void processPngFile(File imageFile) throws IOException {
 		if(builder.isReencodePngFilesEnabled()) {
 			createPng();
@@ -103,11 +106,11 @@ public class Png {
 			this.baPng=FileTools.readFileAsByteArray(imageFile);
 			parsePng();
 		}
-//		if(isApng()) {
-//			throw new RuntimeException("file is an APNG: not supported yet");
-//		}
+		//if(isApng()) {
+		//	throw new RuntimeException("file is an APNG: not supported yet");
+		//}
 	}
-	
+
 	private void createPng() {
 		if(builder.isPngEncoderEnabled()) {
 			PngService.createPngViaPngEncoder(this);
@@ -115,11 +118,11 @@ public class Png {
 			PngService.createPngViaImageIO(this);
 		}
 	}
-	
+
 	ImageData getImageData() {
 		return imageData;
 	}
-	
+
 	void parsePng(){
 		try {
 			chunklist=new ArrayList<Chunk>();
@@ -190,19 +193,19 @@ public class Png {
 	void setFirstPng(Png png) {
 		this.firstPng=png;
 	}
-	
+
 	Png getFirstPng() {
 		return firstPng;
 	}
-	
+
 	void setPreviousPng(Png png) {
 		this.previousPng=png;
 	}
-	
+
 	Png getPreviousPng() {
 		return previousPng;
 	}
-	
+
 	/**
 	 * Writes this PNG to the given file.
 	 * <br>All Png objects that were added to this Png object, will be combined to an APNG animation.
@@ -261,7 +264,7 @@ public class Png {
 		int fcTL_sequenceNumber=0;
 		Chunk chunk_acTL=new Chunk_acTL(listPng.size()+1,0);
 		Chunk chunk_fcTL=new Chunk_fcTL(fcTL_sequenceNumber,getWidth(),getHeight(),0,0,delay,1000,Chunk_fcTL.APNG_DISPOSE_OP_NONE,Chunk_fcTL.APNG_BLEND_OP_SOURCE);
-//		Chunk chunk_fcTL=new Chunk_fcTL(fcTL_sequenceNumber,getWidth(),getHeight(),0,0,delay,1000,Chunk_fcTL.APNG_DISPOSE_OP_NONE,Chunk_fcTL.APNG_BLEND_OP_OVER);
+		//		Chunk chunk_fcTL=new Chunk_fcTL(fcTL_sequenceNumber,getWidth(),getHeight(),0,0,delay,1000,Chunk_fcTL.APNG_DISPOSE_OP_NONE,Chunk_fcTL.APNG_BLEND_OP_OVER);
 
 		for(int i=0;i<apngChunklist.size();i++) {
 			if(apngChunklist.get(i) instanceof Chunk_IDAT) {
@@ -287,6 +290,12 @@ public class Png {
 				Chunk_IDAT chunk_IDAT=arraylistIdatChunks.get(x);
 				Chunk chunk_fdAT=new Chunk_fdAT(++fcTL_sequenceNumber,chunk_IDAT);
 				apngChunklist.add(index_IEND++, chunk_fdAT);
+			}
+			try {
+				png.savePng(new File("c:/temp/ApngResult/Single_"+(i+1)+".png"));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 		return apngChunklist;
@@ -372,7 +381,7 @@ public class Png {
 		}
 		return false;
 	}
-	
+
 	void addChunk(Chunk chunk) {
 		if(chunklist==null) {
 			chunklist=new ArrayList<Chunk>();
@@ -392,15 +401,15 @@ public class Png {
 		}
 		return false;
 	}
-	
+
 	Color getUnusedColour() {
 		if(unusedColour==null) {
-//			unusedColour=PngService.findUnusedColour(firstPng);
+			//			unusedColour=PngService.findUnusedColour(firstPng);
 			unusedColour=firstPng.getImageData().findUnusedColour();
 		}
 		return unusedColour;
 	}
-	
+
 	ArrayList<ImageData> findAllImagedata(){
 		ArrayList<ImageData> allImagedata=new ArrayList<ImageData>();
 		allImagedata.add(firstPng.getImageData());
@@ -410,9 +419,46 @@ public class Png {
 		}
 		return allImagedata;
 	}
-	
+
 	ArrayList<Png> getListPng() {
 		return listPng;
+	}
+
+	private int findIndexOfIdatChunk() {
+		processImageData();
+		for(int i=0;i<chunklist.size();i++) {
+			if(chunklist.get(i) instanceof Chunk_IDAT) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	public void addText(String keyword, String text, boolean compressText) throws UnsupportedEncodingException {
+		int i=findIndexOfIdatChunk();
+		if(i==-1) {
+			throw new RuntimeException("IDAT chunk not found");
+		}
+		Chunk chunk;
+		if(compressText) {
+			chunk=new Chunk_zEXt(keyword,text);
+		}else {
+			chunk=new Chunk_tEXt(keyword,text);
+		}
+		chunklist.add(i, chunk);
+	}
+
+	public void addText(String keyword, String text) throws UnsupportedEncodingException {
+		int i=findIndexOfIdatChunk();
+		Chunk_tEXt chunkText=new Chunk_tEXt(keyword,text);
+		Chunk_zEXt chunkTextCompressed=new Chunk_zEXt(keyword,text);
+		if(chunkTextCompressed.getChunkLength()<chunkText.getChunkLength()) {
+			System.out.println("choosing compressed text");
+			chunklist.add(i, chunkTextCompressed);
+		}else {
+			System.out.println("choosing plain text");
+			chunklist.add(i, chunkText);
+		}
 	}
 
 	@Override

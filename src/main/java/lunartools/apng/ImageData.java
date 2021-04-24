@@ -12,25 +12,25 @@ public class ImageData {
 	private Object imagesource;
 	private BufferedImage bufferedImage;
 	private Color unusedColour;
-	
+
 	private int numberOfColours;
 	private boolean flagIsGreyscale;
 	private ArrayList<Color> palette;
 	private int colourtype;
 	private int bytesPerPixel;
-	
+
 	private int colourCountCode;
 	private int[] imageRgbInts;
-	
+
 	ImageData(Png png,Object imagesource) {
 		this.png=png;
 		this.imagesource=imagesource;
 	}
-	
+
 	Object getImageSource() {
 		return imagesource;
 	}
-	
+
 	BufferedImage getBufferedImage() {
 		if(imagesource instanceof BufferedImage) {
 			return (BufferedImage)imagesource;
@@ -40,28 +40,28 @@ public class ImageData {
 		}
 		return bufferedImage;
 	}
-	
+
 	int getNumberOfColours() {
 		if(numberOfColours==0) {
 			analyzeColours();
 		}
 		return numberOfColours;
 	}
-	
+
 	boolean isGreyscale() {
 		if(numberOfColours==0) {
 			analyzeColours();
 		}
 		return flagIsGreyscale;
 	}
-	
-	int newgetBytesPerPixel() {
+
+	int getBytesPerPixel() {
 		if(bytesPerPixel==0) {
 			analyzeColours();
 		}
 		return bytesPerPixel;
 	}
-	
+
 	byte[] getImageBytes() {
 		switch(colourtype) {
 		case Chunk_IHDR.COLOURTYPE_TRUECOLOUR:
@@ -77,12 +77,14 @@ public class ImageData {
 				bytes[i]=(byte)hashtable[pixel[i]];
 			}
 			return bytes;
-			default:
-				throw new RuntimeException("not supported colour type");
+		case Chunk_IHDR.COLOURTYPE_GREYSCALE:
+			return ImageTools.changeIntGreyscaleToByteGreyscale(getRgbInts());
+		default:
+			throw new RuntimeException("not supported colour type");
 		}
 
 	}
-	
+
 	byte[] convertToPaletteImage(int[] pixel) {
 		byte[] bytes=new byte[pixel.length];
 		int[] hashtable=new int[0x1000000];
@@ -94,14 +96,14 @@ public class ImageData {
 		}
 		return bytes;
 	}
-	
+
 	ArrayList<Color> getPalette(){
 		if(numberOfColours==0) {
 			analyzeColours();
 		}
 		return palette;
 	}
-	
+
 	private void analyzeColours() {
 		ArrayList<ImageData> allImagedata=png.findAllImagedata();
 		int[] colourCount=new int[0x1000000];
@@ -112,7 +114,7 @@ public class ImageData {
 				colourCount[imageRgbInts[i]]++;
 			}
 		}
-		
+
 		//first look if there is an unused 'grey'colour, to make the compressor happy
 		for(int i=0;i<256;i++) {
 			int pixel=(i<<16)|(i<<8)|i;
@@ -129,7 +131,7 @@ public class ImageData {
 				}
 			}
 		}
-		
+
 		int count=0;
 		ArrayList<Color> palette=new ArrayList<Color>();
 		palette.add(new Color(0));
@@ -160,29 +162,29 @@ public class ImageData {
 		}
 
 	}
-	
+
 	public Color findUnusedColour() {
 		if(unusedColour==null) {
 			analyzeColours();
 		}
 		return unusedColour;
 	}
-	
+
 	public int getWidth() {
 		return getBufferedImage().getWidth();
 	}
-	
+
 	public int getHeight() {
 		return getBufferedImage().getHeight();
 	}
-	
+
 	int[] getRgbInts() {
 		if(imageRgbInts==null) {
 			imageRgbInts=ImageTools.getRgbIntsFromBufferedImage(getBufferedImage());
 		}
 		return imageRgbInts;
 	}
-	
+
 	public String toString() {
 		StringBuffer sb=new StringBuffer();
 		sb.append("ImageData:");
@@ -193,5 +195,5 @@ public class ImageData {
 		sb.append("\n\tpalette: "+palette);
 		return sb.toString();
 	}
-	
+
 }

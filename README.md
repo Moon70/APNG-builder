@@ -22,3 +22,9 @@ This project is 'work in progress':
   - Convert 24bit truecolour to 255 colour palette image, if lossless possible
   - Added Logger (SLF4J)
 
+- **Version 0.4-SNAPSHOT:**
+  
+  - Textual data can be added to the PNG
+  - Greyscale image support
+  - 
+

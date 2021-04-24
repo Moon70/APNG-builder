@@ -14,16 +14,16 @@ import lunartools.apng.ByteTools;
 public class Chunk_fcTL extends Chunk{
 	public static final String TYPE="fcTL";
 	private static final int LENGTH_CHUNKDATA=26;
-	
+
 	/** APNG specification: no disposal is done on this frame before rendering the next; the contents of the output buffer are left as is. */
 	public static final int APNG_DISPOSE_OP_NONE=0;
 
 	/** APNG specification: the frame's region of the output buffer is to be cleared to fully transparent black before rendering the next frame. */
 	public static final int APNG_DISPOSE_OP_BACKGROUND=1;
-	
+
 	/** APNG specification: the frame's region of the output buffer is to be reverted to the previous contents before rendering the next frame. */
 	public static final int APNG_DISPOSE_OP_PREVIOUS=2;
-	
+
 	/** APNG specification: all color components of the frame, including alpha, overwrite the current contents of the frame's output buffer region. */
 	public static final int APNG_BLEND_OP_SOURCE=0;
 
@@ -125,8 +125,6 @@ public class Chunk_fcTL extends Chunk{
 		sb.append("\n\t\tdelay den="+getDelayDen());
 		sb.append("\n\t\tdispose op="+getDisposeOp());
 		sb.append("\n\t\tblend op="+getBlendOp());
-
-		sb.append("\n");
 		return sb.toString();
 	}
 

@@ -9,7 +9,7 @@ import java.io.ByteArrayOutputStream;
  */
 public class PngEncoder {
 
-	public byte[] encodePng(byte[] data, int width, int height, int bytesPerPixel) throws Exception {
+	public byte[] encodePng(byte[] data, int width, int height, int bytesPerPixel, boolean isGreyscale) throws Exception {
 		FilterScore filterScore=new FilterScore4();
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();
 		byte[] baLine;
