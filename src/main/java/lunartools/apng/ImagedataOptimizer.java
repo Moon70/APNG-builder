@@ -15,24 +15,25 @@ public class ImagedataOptimizer {
 		this.offsetY=0;
 
 		ImageData imageData=png.getImageData();
+		AnimData animData=png.getAnimData();
 		this.width=imageData.getWidth();
 		this.height=imageData.getHeight();
 
 		Png pngReference=png.getPreviousPng();
 		ImageData imageDataReference=pngReference.getImageData();
 
-		Color unusedColour=png.getUnusedColour();
+		Color unusedColour=animData.findUnusedColour();
 		int[] intImage=imageData.getRgbInts().clone();
 		int[] intReference=imageDataReference.getRgbInts().clone();
 
 		//if(true) {
-		createOptimizedImage(intImage,intReference,unusedColour.getColor(),imageData);
+		createOptimizedImage(intImage,intReference,unusedColour.getColor(),imageData,animData);
 		//}else {
 		//	this.imagedata=imageData.getImageBytes();
 		//}
 	}
 
-	private void createOptimizedImage(int[] intImage,int[] intReference,int unusedColour,ImageData imageData) {
+	private void createOptimizedImage(int[] intImage,int[] intReference,int unusedColour,ImageData imageData,AnimData animData) {
 		for(int i=0;i<intImage.length;i++) {
 			if(intImage[i]==intReference[i] && intImage[++i]==intReference[i]) {
 				intImage[i-1]=unusedColour;
@@ -54,9 +55,9 @@ public class ImagedataOptimizer {
 		//System.out.println("croppedImagedata: "+intImage.length);
 		//System.out.println("\t"+width+" / "+height);
 
-		if(imageData.getNumberOfColours()>256) {
+		if(animData.getNumberOfColours()>256) {
 			this.imagedata=ImageTools.changeIntRGBtoByteRGB(intImage);
-		}else if(imageData.isGreyscale()){
+		}else if(animData.isGreyscale()){
 			this.imagedata=ImageTools.changeIntGreyscaleToByteGreyscale(intImage);
 		}else {
 			this.imagedata=imageData.convertToPaletteImage(intImage);

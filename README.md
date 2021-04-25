@@ -26,5 +26,9 @@ This project is 'work in progress':
   
   - Textual data can be added to the PNG
   - Greyscale image support
-  - 
+
+- **Version 0.5-SNAPSHOT:**
+  
+  - Optional reduction of bit depth (lossy conversion)
+
 

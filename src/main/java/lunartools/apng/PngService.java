@@ -38,7 +38,8 @@ public class PngService {
 	static void createPngViaPngEncoder(Png png) {
 		try {
 			ImageData imageData=png.getImageData();
-			int numberOfColours=imageData.getNumberOfColours();
+			AnimData animData=png.getAnimData();
+			int numberOfColours=animData.getNumberOfColours();
 			int bitdepth;
 			int colourtype;
 			Chunk_PLTE chunk_PLTE=null;
@@ -46,18 +47,18 @@ public class PngService {
 			if(numberOfColours>255) {
 				bitdepth=8;
 				colourtype=Chunk_IHDR.COLOURTYPE_TRUECOLOUR;
-				Color unusedColour=png.getFirstPng().getUnusedColour();
+				Color unusedColour=animData.findUnusedColour();
 				chunk_tRNS=new Chunk_tRNS(unusedColour.getRed(),unusedColour.getGreen(),unusedColour.getBlue());
 
-			}else if(imageData.isGreyscale()) {
+			}else if(animData.isGreyscale()) {
 				bitdepth=8;
 				colourtype=Chunk_IHDR.COLOURTYPE_GREYSCALE;
-				Color unusedColour=png.getFirstPng().getUnusedColour();
+				Color unusedColour=animData.findUnusedColour();
 				chunk_tRNS=new Chunk_tRNS(unusedColour.getColor());
 			}else {
 				bitdepth=8;
 				colourtype=Chunk_IHDR.COLOURTYPE_INDEXEDCOLOUR;
-				ArrayList<Color> palette=imageData.getPalette();
+				ArrayList<Color> palette=animData.getPalette();
 				chunk_PLTE=new Chunk_PLTE(palette);
 				int[] alphaPalette=new int[palette.size()];
 				for(int i=1;i<alphaPalette.length;i++) {
@@ -72,7 +73,7 @@ public class PngService {
 				PngEncoder pngEncoder=new PngEncoder();
 				int width=imageData.getWidth();
 				int height=imageData.getHeight();
-				baImageRaw=pngEncoder.encodePng(imageData.getImageBytes(), width, height,imageData.getBytesPerPixel(),imageData.isGreyscale());
+				baImageRaw=pngEncoder.encodePng(imageData.getImageBytes(), width, height,animData.getBytesPerPixel(),animData.isGreyscale());
 				chunk_IHDR=new Chunk_IHDR(width, height, bitdepth, colourtype);
 				logger.trace("IHDR 1: {}",chunk_IHDR);
 			}else {
@@ -80,7 +81,7 @@ public class PngService {
 				imagedataOptimizer.optimizeImage(png);
 				//System.out.println("imagedataOptimizer: "+imagedataOptimizer);
 
-				baImageRaw=new PngEncoder().encodePng(imagedataOptimizer.getImagedata(),imagedataOptimizer.getwidth(),imagedataOptimizer.getHeight(),imageData.getBytesPerPixel(),imageData.isGreyscale());
+				baImageRaw=new PngEncoder().encodePng(imagedataOptimizer.getImagedata(),imagedataOptimizer.getwidth(),imagedataOptimizer.getHeight(),animData.getBytesPerPixel(),animData.isGreyscale());
 				chunk_IHDR=new Chunk_IHDR(imagedataOptimizer.getwidth(), imagedataOptimizer.getHeight(), bitdepth, colourtype);
 				logger.trace("IHDR +: {}",chunk_IHDR);
 				png.setOffset(imagedataOptimizer.getOffsetX(),imagedataOptimizer.getOffsetY());

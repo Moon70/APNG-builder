@@ -43,6 +43,7 @@ public class Png {
 	private ApngBuilder builder;
 	private ImageData imageData;
 	private Png firstPng=this;
+	private AnimData animData=new AnimData(this);
 	private Png previousPng;
 	private Color unusedColour;
 
@@ -123,6 +124,14 @@ public class Png {
 		return imageData;
 	}
 
+	AnimData getAnimData() {
+		if(firstPng==this) {
+			return animData;
+		}else {
+			return firstPng.getAnimData();
+		}
+	}
+	
 	void parsePng(){
 		try {
 			chunklist=new ArrayList<Chunk>();
@@ -402,14 +411,6 @@ public class Png {
 		return false;
 	}
 
-	Color getUnusedColour() {
-		if(unusedColour==null) {
-			//			unusedColour=PngService.findUnusedColour(firstPng);
-			unusedColour=firstPng.getImageData().findUnusedColour();
-		}
-		return unusedColour;
-	}
-
 	ArrayList<ImageData> findAllImagedata(){
 		ArrayList<ImageData> allImagedata=new ArrayList<ImageData>();
 		allImagedata.add(firstPng.getImageData());
@@ -461,6 +462,10 @@ public class Png {
 		}
 	}
 
+	ApngBuilder getBuilder() {
+		return builder;
+	}
+	
 	@Override
 	public String toString() {
 		processImageData();

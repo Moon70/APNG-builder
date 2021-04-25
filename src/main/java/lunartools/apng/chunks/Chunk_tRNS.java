@@ -120,10 +120,10 @@ public class Chunk_tRNS extends Chunk{
 		sb.append(TYPE+": length="+getDataLength());
 		switch(colorType) {
 		case Chunk_IHDR.COLOURTYPE_GREYSCALE:
-			sb.append(", transparent greyscale colour="+getTransparentColour());
+			sb.append(", transparent greyscale colour="+Integer.toHexString(getTransparentColour()));
 			break;
 		case Chunk_IHDR.COLOURTYPE_TRUECOLOUR:
-			sb.append(", transparent truecolour="+getTransparentColour());
+			sb.append(", transparent truecolour="+Integer.toHexString(getTransparentColour()));
 			break;
 		case Chunk_IHDR.COLOURTYPE_INDEXEDCOLOUR:
 			sb.append(", palette-NumberOfEntries="+getDataLength());

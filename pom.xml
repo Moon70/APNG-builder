@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>lunartools</groupId>
 	<artifactId>apngbuilder</artifactId>
-	<version>0.4-SNAPSHOT</version>
+	<version>0.5-SNAPSHOT</version>
 	<name>APNG Builder</name>
 	<description>Creates a APNG (animated PNG) file from a series of single images</description>
 	<properties>

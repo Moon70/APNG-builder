@@ -19,6 +19,7 @@ public class ApngBuilder {
 	private static Logger logger = LoggerFactory.getLogger(ApngBuilder.class);
 	private boolean flagPngEncoderEnabled=true;
 	private boolean flagReencodePngFilesEnabled=true;
+	private int numberOfTruecolourBits=8;
 
 	/**
 	 * To enable/disable the PNG encoder.
@@ -39,6 +40,7 @@ public class ApngBuilder {
 	 */
 	public ApngBuilder enablePngEncoder(boolean pngEncoder) {
 		this.flagPngEncoderEnabled=pngEncoder;
+		logger.debug("PngEncoderEnabled: {}",this.flagPngEncoderEnabled);
 		return this;
 	}
 
@@ -50,7 +52,7 @@ public class ApngBuilder {
 	boolean isPngEncoderEnabled() {
 		return flagPngEncoderEnabled;
 	}
-	
+
 	/**
 	 * enable/disable reencoding of PNG files.
 	 * <br>Affects only the builder methods with PNG file input.
@@ -67,9 +69,20 @@ public class ApngBuilder {
 	 */
 	public ApngBuilder enableReencodePngFiles(boolean reencodePngFiles) {
 		this.flagReencodePngFilesEnabled=reencodePngFiles;
+		logger.debug("ReencodePngFilesEnabled: {}",this.flagReencodePngFilesEnabled);
 		return this;
 	}
-	
+
+	public ApngBuilder setNumberOfTruecolourBits(int numberOfBits) {
+		this.numberOfTruecolourBits=numberOfBits;
+		logger.debug("TrueColour number of bits: {}",this.numberOfTruecolourBits);
+		return this;
+	}
+
+	int getNumberOfTruecolourBits() {
+		return this.numberOfTruecolourBits;
+	}
+
 	/**
 	 * If the input data (the image) is already in PNG format:
 	 * <br><code>true</code>: The PngEncoder should reencode the imagedata, to hopefully reduce the filesize.
@@ -81,7 +94,7 @@ public class ApngBuilder {
 	boolean isReencodePngFilesEnabled() {
 		return flagReencodePngFilesEnabled;
 	}
-	
+
 	/**
 	 * Builds a PNG from a given file.
 	 * <br>The file can be any image file that Java can read.
@@ -100,7 +113,7 @@ public class ApngBuilder {
 		}
 		return new Png(this,image);
 	}
-	
+
 	/**
 	 * Builds a PNG from a given file array.
 	 * <br>Each file can be any image file that Java can read.
@@ -126,5 +139,5 @@ public class ApngBuilder {
 		}
 		return apng;
 	}
-	
+
 }
