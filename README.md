@@ -32,3 +32,7 @@ This project is 'work in progress':
   - Optional reduction of bit depth (lossy conversion)
 
 
+- **Version 0.6-SNAPSHOT:**
+  
+  - Added colour quantizer (lossy conversion)
+

@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import lunartools.apng.chunks.Chunk_IHDR;
+import lunartools.colorquantizer.GPAC_experimental;
 
 public class AnimData {
 	private static Logger logger = LoggerFactory.getLogger(AnimData.class);
@@ -83,6 +84,30 @@ public class AnimData {
 			}
 		}
 
+		int maximumNumberOfColours=png.getFirstPng().getBuilder().getMaximumNumberOfColours();
+		if(maximumNumberOfColours!=0) {
+			ArrayList<ImageData> allImagedata=png.findAllImagedata();
+			int[] colourCount=new int[0x1000000];
+			for(int k=0;k<allImagedata.size();k++) {
+				ImageData imageData=allImagedata.get(k);
+				int[] imageRgbInts=imageData.getRgbInts();
+				for(int i=0;i<imageRgbInts.length;i++) {
+					colourCount[imageRgbInts[i]]++;
+				}
+			}
+			logger.debug("calling colour quantizer");
+			new GPAC_experimental().quantizeColors(colourCount,maximumNumberOfColours);
+			for(int k=0;k<allImagedata.size();k++) {
+				ImageData imageData=allImagedata.get(k);
+				int[] imageRgbInts=imageData.getRgbInts();
+				for(int i=0;i<imageRgbInts.length;i++) {
+					imageRgbInts[i]=colourCount[imageRgbInts[i]];
+				}
+			}
+			analyzeColours();
+			return;
+		}
+
 	}
 
 	private void analyzeColours() {
@@ -130,6 +155,7 @@ public class AnimData {
 			}
 		}
 		numberOfColours=count;
+		logger.debug("number of colours: {}",numberOfColours);
 		if(count>256) {
 			colourtype=Chunk_IHDR.COLOURTYPE_TRUECOLOUR;
 			bytesPerPixel=3;

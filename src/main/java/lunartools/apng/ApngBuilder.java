@@ -20,6 +20,7 @@ public class ApngBuilder {
 	private boolean flagPngEncoderEnabled=true;
 	private boolean flagReencodePngFilesEnabled=true;
 	private int numberOfTruecolourBits=8;
+	private int maximumNumberOfColours;
 
 	/**
 	 * To enable/disable the PNG encoder.
@@ -73,16 +74,6 @@ public class ApngBuilder {
 		return this;
 	}
 
-	public ApngBuilder setNumberOfTruecolourBits(int numberOfBits) {
-		this.numberOfTruecolourBits=numberOfBits;
-		logger.debug("TrueColour number of bits: {}",this.numberOfTruecolourBits);
-		return this;
-	}
-
-	int getNumberOfTruecolourBits() {
-		return this.numberOfTruecolourBits;
-	}
-
 	/**
 	 * If the input data (the image) is already in PNG format:
 	 * <br><code>true</code>: The PngEncoder should reencode the imagedata, to hopefully reduce the filesize.
@@ -93,6 +84,26 @@ public class ApngBuilder {
 	 */
 	boolean isReencodePngFilesEnabled() {
 		return flagReencodePngFilesEnabled;
+	}
+
+	public ApngBuilder setNumberOfTruecolourBits(int numberOfBits) {
+		this.numberOfTruecolourBits=numberOfBits;
+		logger.debug("TrueColour number of bits: {}",this.numberOfTruecolourBits);
+		return this;
+	}
+
+	int getNumberOfTruecolourBits() {
+		return this.numberOfTruecolourBits;
+	}
+
+	public ApngBuilder setMaximumNumberOfColours(int numberOfColours) {
+		this.maximumNumberOfColours=numberOfColours;
+		logger.debug("TNumber of colours for quantizer: {}",this.maximumNumberOfColours);
+		return this;
+	}
+
+	int getMaximumNumberOfColours() {
+		return this.maximumNumberOfColours;
 	}
 
 	/**
