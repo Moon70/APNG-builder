@@ -1,4 +1,4 @@
-package lunartools.pngidatcodec;
+package lunartools.apng;
 
 import java.awt.Image;
 import java.awt.MediaTracker;
@@ -14,7 +14,7 @@ import javax.swing.JFrame;
 
 public class ImageTools {
 
-	public static byte[] changeIntGreyscaleToByteGreyscale(int[] intbuffer) {
+	static byte[] changeIntGreyscaleToByteGreyscale(int[] intbuffer) {
 		byte[] bytes=new byte[intbuffer.length];
 		for(int i=0;i<intbuffer.length;i++) {
 			bytes[i]=(byte)(intbuffer[i]&0xff);
@@ -22,7 +22,7 @@ public class ImageTools {
 		return bytes;
 	}
 
-	public static byte[] changeIntRGBtoByteRGB(int[] intbuffer) {
+	 static byte[] changeIntRGBtoByteRGB(int[] intbuffer) {
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();
 		for(int i=0;i<intbuffer.length;i++) {
 			int pixel=intbuffer[i];
@@ -64,7 +64,7 @@ public class ImageTools {
 		return dataInt;
 	}
 
-	public static BufferedImage createBufferedImageFromFile(File file) {
+	static BufferedImage createBufferedImageFromFile(File file) {
 		Image image=Toolkit.getDefaultToolkit().getImage(file.getAbsolutePath());
 
 		JFrame jframe=new JFrame();
@@ -85,7 +85,7 @@ public class ImageTools {
 		return bufferedImage;
 	}
 
-	public static byte[] getRgbBytesFromBufferedImage(BufferedImage bufferedImage) {
+	static byte[] getRgbBytesFromBufferedImage(BufferedImage bufferedImage) {
 		DataBuffer databuffer=bufferedImage.getRaster().getDataBuffer();
 		if(databuffer instanceof DataBufferInt) {
 			int[] intImagedata=((DataBufferInt)databuffer).getData();
@@ -100,7 +100,7 @@ public class ImageTools {
 		}
 	}
 
-	public static int[] getRgbIntsFromBufferedImage(BufferedImage bufferedImage) {
+	static int[] getRgbIntsFromBufferedImage(BufferedImage bufferedImage) {
 		DataBuffer databuffer=bufferedImage.getRaster().getDataBuffer();
 		if(databuffer instanceof DataBufferInt) {
 			int[] intImagedata=((DataBufferInt)databuffer).getData();

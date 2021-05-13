@@ -1,5 +1,6 @@
 package lunartools.apng;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,9 +44,8 @@ public class Png {
 	private ApngBuilder builder;
 	private ImageData imageData;
 	private Png firstPng=this;
-	private AnimData animData=new AnimData(this);
 	private Png previousPng;
-	private Color unusedColour;
+	private AnimData animData=new AnimData(this);
 
 	private boolean flagImageDataProcessed;
 
@@ -61,25 +61,84 @@ public class Png {
 	 * Creates a Png object from the given image file.
 	 * <br>Image file format: Anything that Java can read.
 	 * 
-	 * @param fileImage An image file that Java can read
+	 * @param builder the calling ApngBuilder object
+	 * @param fileImage the File to build the Png object
 	 */
 	Png(ApngBuilder builder,File fileImage){
 		this.builder=builder;
 		this.imageData=new ImageData(this,fileImage);
 	}
 
-	//	/**
-	//	 * Creates a Png object from the given bytearray, which must contain PNG data.
-	//	 * 
-	//	 * @param pngAsBytearray
-	//	 */
-	//	Png(byte[] pngAsBytearray) {
-	//		this.baPng=pngAsBytearray;
-	//		if(!isPngFile(baPng)){
-	//			throw new RuntimeException("Not a PNG");
-	//		}
-	//	}
+	/**
+	 * Creates a Png object from the given BufferedImage.
+	 * 
+	 * @param builder the calling ApngBuilder object
+	 * @param image the BufferedImage to build the Png object
+	 */
+	Png(ApngBuilder builder,BufferedImage bufferedImage){
+		this.builder=builder;
+		this.imageData=new ImageData(this,bufferedImage);
+	}
 
+	ImageData getImageData() {
+		return imageData;
+	}
+
+	AnimData getAnimData() {
+		if(firstPng==this) {
+			return animData;
+		}else {
+			return firstPng.getAnimData();
+		}
+	}
+
+	/**
+	 * Returns the concatenated imagedata of all IDAT chunks of this PNG.
+	 * 
+	 * @return the compressed imagedata of this PNG.
+	 */
+	byte[] getCompressedImagedataBytes() {
+		processImageData();
+		ByteArrayOutputStream baos=new ByteArrayOutputStream();
+		try {
+			for(int i=0;i<chunklist.size();i++) {
+				if(chunklist.get(i) instanceof Chunk_IDAT) {
+					Chunk_IDAT chunk=(Chunk_IDAT)chunklist.get(i);
+					baos.write(chunk.getChunkData());
+				}
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Error reading imagedata",e);
+		}
+		return baos.toByteArray();
+	}
+
+	/**
+	 * Returns the decompressed concatenated imagedata of all IDAT chunks of this PNG.
+	 * 
+	 * @return the decompressed imagedata of this PNG.
+	 */
+	byte[] getDecompressedImagedataBytes() {
+		processImageData();
+		ByteArrayOutputStream baos=new ByteArrayOutputStream();
+		try {
+			Inflater inflater=new Inflater();
+			InflaterOutputStream inflaterOutputStream=new InflaterOutputStream(baos,inflater);
+			inflaterOutputStream.write(getCompressedImagedataBytes());
+			inflaterOutputStream.finish();
+			inflaterOutputStream.flush();
+			inflaterOutputStream.close();
+		} catch (Exception e) {
+			throw new RuntimeException("Error reading imagedata",e);
+		}
+		return baos.toByteArray();
+	}
+	
+	//---------------------------------------------------------------------------------------------------------------------------------------------
+	/**
+	 * Processes the ImageData object of this PNG.
+	 * <br>
+	 */
 	private void processImageData() {
 		if(flagImageDataProcessed) {
 			return;
@@ -117,22 +176,11 @@ public class Png {
 			PngService.createPngViaPngEncoder(this);
 		}else {
 			PngService.createPngViaImageIO(this);
-		}
-	}
-
-	ImageData getImageData() {
-		return imageData;
-	}
-
-	AnimData getAnimData() {
-		if(firstPng==this) {
-			return animData;
-		}else {
-			return firstPng.getAnimData();
+			parsePng();
 		}
 	}
 	
-	void parsePng(){
+	private void parsePng(){
 		try {
 			chunklist=new ArrayList<Chunk>();
 
@@ -151,38 +199,6 @@ public class Png {
 		} catch (Exception e) {
 			throw new RuntimeException("error parsing PNG file",e);
 		}
-	}
-
-	byte[] getCompressedImagedataBytes() {
-		processImageData();
-		ByteArrayOutputStream baos=new ByteArrayOutputStream();
-		try {
-			for(int i=0;i<chunklist.size();i++) {
-				if(chunklist.get(i) instanceof Chunk_IDAT) {
-					Chunk_IDAT chunk=(Chunk_IDAT)chunklist.get(i);
-					baos.write(chunk.getChunkData());
-				}
-			}
-		} catch (Exception e) {
-			throw new RuntimeException("Error reading imagedata",e);
-		}
-		return baos.toByteArray();
-	}
-
-	byte[] getDecompressedImagedataBytes() {
-		processImageData();
-		ByteArrayOutputStream baos=new ByteArrayOutputStream();
-		try {
-			Inflater inflater=new Inflater();
-			InflaterOutputStream inflaterOutputStream=new InflaterOutputStream(baos,inflater);
-			inflaterOutputStream.write(getCompressedImagedataBytes());
-			inflaterOutputStream.finish();
-			inflaterOutputStream.flush();
-			inflaterOutputStream.close();
-		} catch (Exception e) {
-			throw new RuntimeException("Error reading imagedata",e);
-		}
-		return baos.toByteArray();
 	}
 
 	public void addPng(Png png) {
@@ -227,7 +243,7 @@ public class Png {
 	 */
 	public void savePng(File file) throws FileNotFoundException, IOException {
 		try(FileOutputStream fos=new FileOutputStream(file)){
-			writePngToStream(fos);
+			writePngToStream(fos,null);
 		}
 	}
 
@@ -242,7 +258,22 @@ public class Png {
 	 */
 	public byte[] toByteArray() throws IOException {
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();
-		writePngToStream(baos);
+		writePngToStream(baos,null);
+		return baos.toByteArray();
+	}
+
+	/**
+	 * Returns this PNG as bytearray.
+	 * <br>All Png objects that were added to this Png object, will be combined to an APNG animation.
+	 * <br>If there are no added Png Objects, a PNG file will be created (not an one-image-APNG).
+	 * <br>How the (A)PNG is created depends on the settings of the builder that created this Png object.
+	 * 
+	 * @return PNG as bytearray
+	 * @throws IOException
+	 */
+	public byte[] toByteArray(ProgressCallback progressCallback) throws IOException {
+		ByteArrayOutputStream baos=new ByteArrayOutputStream();
+		writePngToStream(baos,progressCallback);
 		return baos.toByteArray();
 	}
 
@@ -255,11 +286,14 @@ public class Png {
 	 * @param outputStream
 	 * @throws IOException
 	 */
-	private void writePngToStream(OutputStream outputStream) throws IOException {
+	private void writePngToStream(OutputStream outputStream,ProgressCallback progressCallback) throws IOException {
+		if(progressCallback!=null){
+			progressCallback.setProgressStep(1);
+		}
 		processImageData();
 		ArrayList<Chunk> chunklistWork=chunklist;
 		if(listPng.size()>0) {
-			chunklistWork=createApngChunklist();
+			chunklistWork=createApngChunklist(progressCallback);
 		}
 		outputStream.write(PNG_SIGNATURE);
 		for(int i=0;i<chunklistWork.size();i++) {
@@ -268,7 +302,7 @@ public class Png {
 		}
 	}
 
-	private ArrayList<Chunk> createApngChunklist() {
+	private ArrayList<Chunk> createApngChunklist(ProgressCallback progressCallback) {
 		ArrayList<Chunk> apngChunklist=(ArrayList<Chunk>)chunklist.clone();
 		int fcTL_sequenceNumber=0;
 		Chunk chunk_acTL=new Chunk_acTL(listPng.size()+1,0);
@@ -291,21 +325,28 @@ public class Png {
 		}
 
 		for(int i=0;i<listPng.size();i++) {
+			if(progressCallback!=null) {
+				progressCallback.setProgressStep(i+2);
+			}
 			Png png=listPng.get(i);
 			ArrayList<Chunk_IDAT> arraylistIdatChunks=png.getAllIdatChunks();
 			chunk_fcTL=new Chunk_fcTL(++fcTL_sequenceNumber,png.getWidth(),png.getHeight(),png.offsetX,png.offsetY,png.getDelay(),1000,Chunk_fcTL.APNG_DISPOSE_OP_NONE,Chunk_fcTL.APNG_BLEND_OP_OVER);
 			apngChunklist.add(index_IEND++, chunk_fcTL);
+			if(i>0) {
+				png.getPreviousPng().getImageData().reset();
+			}
 			for(int x=0;x<arraylistIdatChunks.size();x++) {
 				Chunk_IDAT chunk_IDAT=arraylistIdatChunks.get(x);
 				Chunk chunk_fdAT=new Chunk_fdAT(++fcTL_sequenceNumber,chunk_IDAT);
 				apngChunklist.add(index_IEND++, chunk_fdAT);
 			}
-			try {
-				png.savePng(new File("c:/temp/ApngResult/Single_"+(i+1)+".png"));
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			//TODO: single
+//			try {
+//				png.savePng(new File("c:/temp/ApngResult/Single_"+(i+1)+".png"));
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 		}
 		return apngChunklist;
 	}

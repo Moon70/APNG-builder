@@ -8,7 +8,12 @@ import org.slf4j.LoggerFactory;
 import lunartools.apng.chunks.Chunk_IHDR;
 import lunartools.colorquantizer.GPAC_experimental;
 
-public class AnimData {
+/**
+ * The common data of all images of this animation (APNG).
+ * 
+ * @author Thomas Mattel
+ */
+class AnimData {
 	private static Logger logger = LoggerFactory.getLogger(AnimData.class);
 	private Png png;
 	private int numberOfColours;
@@ -22,6 +27,11 @@ public class AnimData {
 		this.png=png;
 	}
 
+	/**
+	 * The total number of used colours of all images of this animation.
+	 * 
+	 * @return total number of used colours of all images of this animation
+	 */
 	int getNumberOfColours() {
 		if(numberOfColours==0) {
 			analyzeImages();
@@ -29,6 +39,11 @@ public class AnimData {
 		return numberOfColours;
 	}
 
+	/**
+	 * Returns <code>true</code> if all images of this animation are greyscale.
+	 * 
+	 * @return <code>true</code> if all images of this animation are greyscale
+	 */
 	boolean isGreyscale() {
 		if(numberOfColours==0) {
 			analyzeImages();
@@ -36,6 +51,11 @@ public class AnimData {
 		return flagIsGreyscale;
 	}
 
+	/**
+	 * Returns the common colour palette of all images of this animation.
+	 * <br>If the colourtype is not indexed colour, then <code>null</code> is returned
+	 * @return the common colour palette of all images of this animation, or null
+	 */
 	ArrayList<Color> getPalette(){
 		if(numberOfColours==0) {
 			analyzeImages();
@@ -43,7 +63,7 @@ public class AnimData {
 		return palette;
 	}
 
-	public Color findUnusedColour() {
+	Color getUnusedColour() {
 		if(unusedColour==null) {
 			analyzeImages();
 		}
@@ -107,7 +127,6 @@ public class AnimData {
 			analyzeColours();
 			return;
 		}
-
 	}
 
 	private void analyzeColours() {
@@ -161,13 +180,13 @@ public class AnimData {
 			bytesPerPixel=3;
 			logger.debug("colour type is truecolour");
 		}else{
-			this.palette=palette;
 			this.flagIsGreyscale=isGreyscale;
 			bytesPerPixel=1;
 			if(isGreyscale) {
 				colourtype=Chunk_IHDR.COLOURTYPE_GREYSCALE;
-				logger.debug("colour type is hreyscale");
+				logger.debug("colour type is greyscale");
 			}else {
+				this.palette=palette;
 				colourtype=Chunk_IHDR.COLOURTYPE_INDEXEDCOLOUR;
 				logger.debug("colour type is indexed colour");
 			}
@@ -187,6 +206,7 @@ public class AnimData {
 		}
 	}
 
+	@Override
 	public String toString() {
 		StringBuffer sb=new StringBuffer();
 		sb.append("AnimData:");
@@ -195,5 +215,5 @@ public class AnimData {
 		sb.append("\n\tpalette: "+palette);
 		return sb.toString();
 	}
-
+	
 }

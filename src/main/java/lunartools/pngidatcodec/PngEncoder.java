@@ -3,12 +3,22 @@ package lunartools.pngidatcodec;
 import java.io.ByteArrayOutputStream;
 
 /**
- * Creates a bytearray of uncompressed PNG scanlines from a BufferedImage.
+ * Creates a bytearray of uncompressed PNG scanlines from a bytearray of pixeldata.
  * 
  * @author Thomas Mattel
  */
 public class PngEncoder {
-
+//TODO: refactoring
+	/**
+	 * Applies PNG filter to an bytearray of pixeldata
+	 * @param data
+	 * @param width
+	 * @param height
+	 * @param bytesPerPixel
+	 * @param isGreyscale
+	 * @return
+	 * @throws Exception
+	 */
 	public byte[] encodePng(byte[] data, int width, int height, int bytesPerPixel, boolean isGreyscale) throws Exception {
 		FilterScore filterScore=new FilterScore4();
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();

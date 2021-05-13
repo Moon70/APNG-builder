@@ -27,12 +27,12 @@ public class PngService {
 		BufferedImage bufferedImage=png.getImageData().getBufferedImage();
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();
 		try {
+			logger.debug("Creating PNG using ImagerIO");
 			ImageIO.write(bufferedImage, "PNG", baos);
 		} catch (IOException e) {
 			throw new RuntimeException("error creating PNG data",e);
 		}
 		png.baPng=baos.toByteArray();
-		png.parsePng();
 	}
 
 	static void createPngViaPngEncoder(Png png) {
@@ -47,13 +47,13 @@ public class PngService {
 			if(numberOfColours>255) {
 				bitdepth=8;
 				colourtype=Chunk_IHDR.COLOURTYPE_TRUECOLOUR;
-				Color unusedColour=animData.findUnusedColour();
+				Color unusedColour=animData.getUnusedColour();
 				chunk_tRNS=new Chunk_tRNS(unusedColour.getRed(),unusedColour.getGreen(),unusedColour.getBlue());
 
 			}else if(animData.isGreyscale()) {
 				bitdepth=8;
 				colourtype=Chunk_IHDR.COLOURTYPE_GREYSCALE;
-				Color unusedColour=animData.findUnusedColour();
+				Color unusedColour=animData.getUnusedColour();
 				chunk_tRNS=new Chunk_tRNS(unusedColour.getColor());
 			}else {
 				bitdepth=8;
@@ -69,6 +69,7 @@ public class PngService {
 
 			byte[] baImageRaw;
 			Chunk_IHDR chunk_IHDR;
+			logger.debug("Creating PNG using PngEncoder");
 			if(png.getPreviousPng()==null) {
 				PngEncoder pngEncoder=new PngEncoder();
 				int width=imageData.getWidth();
@@ -100,7 +101,11 @@ public class PngService {
 			}
 
 			ByteArrayOutputStream baos=new ByteArrayOutputStream();
-			Deflater deflater=new Deflater(Deflater.BEST_COMPRESSION);
+			Deflater deflater=new Deflater(Deflater.BEST_COMPRESSION,false);
+			deflater.setStrategy(Deflater.HUFFMAN_ONLY);
+//			deflater.setStrategy(Deflater.FILTERED);
+//			deflater.setStrategy(Deflater.DEFAULT_STRATEGY);
+//			deflater.setStrategy(Deflater.NO_FLUSH);
 			DeflaterOutputStream deflaterOutputStream=new DeflaterOutputStream(baos,deflater);
 			deflaterOutputStream.write(baImageRaw);
 			deflaterOutputStream.finish();

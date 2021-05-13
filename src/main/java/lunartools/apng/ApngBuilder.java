@@ -1,5 +1,6 @@
 package lunartools.apng;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -19,6 +20,7 @@ public class ApngBuilder {
 	private static Logger logger = LoggerFactory.getLogger(ApngBuilder.class);
 	private boolean flagPngEncoderEnabled=true;
 	private boolean flagReencodePngFilesEnabled=true;
+	private int minimumNumberOfTransparentPixel=3;
 	private int numberOfTruecolourBits=8;
 	private int maximumNumberOfColours;
 
@@ -86,6 +88,31 @@ public class ApngBuilder {
 		return flagReencodePngFilesEnabled;
 	}
 
+	/**
+	 * The minimum number of pixel in a row that have not changed, before replacing them with transparent pixel.
+	 * <br>When <code>0</code>, no pixel gets replaced with transparent pixel.
+	 * <br>When <code>1</code>, every unchanged pixel gets replaced with transparent pixel.
+	 * <br>When <code>2</code>, unchanged pixel only get replaced if there are at least 2 in a row
+	 * <br>and so on...
+	 * <br>This is a lossless transformation.
+	 * <br>Please note: Depending on the animation, there is also a chance that the data size will increase, specifically if
+	 * the animation is a movie sequence.
+	 * <br>The encoder should try both ways and take the shorter, this is not implemented yet.
+	 * <br>However, if it´s a cartoon-like animation, or an animation in front of a static background, the size gets reduced drastically.
+	 * 
+	 * @param transparentPixelEnabled
+	 * @return
+	 */
+	public ApngBuilder setMinimumNumberOfTransparentPixel(int minimumNumberOfTransparentPixel) {
+		this.minimumNumberOfTransparentPixel=minimumNumberOfTransparentPixel;
+		logger.debug("TransparentPixelEnabled: {}",this.minimumNumberOfTransparentPixel);
+		return this;
+	}
+
+	int getMinimumNumberOfTransparentPixel() {
+		return minimumNumberOfTransparentPixel;
+	}
+
 	public ApngBuilder setNumberOfTruecolourBits(int numberOfBits) {
 		this.numberOfTruecolourBits=numberOfBits;
 		logger.debug("TrueColour number of bits: {}",this.numberOfTruecolourBits);
@@ -126,6 +153,20 @@ public class ApngBuilder {
 	}
 
 	/**
+	 * Builds a PNG from a BufferedImage.
+	 * <br>This PNG object can be used to add another PNG objects, to create an APNG animation.
+	 * 
+	 * @param image the BufferedImage to build the Png object
+	 * @return the Png object built from the BufferedImage
+	 */
+	public Png buildPng(BufferedImage image){
+		if(image==null) {
+			throw new NullPointerException("image");
+		}
+		return new Png(this,image);
+	}
+
+	/**
 	 * Builds a PNG from a given file array.
 	 * <br>Each file can be any image file that Java can read.
 	 * <br>This PNG object can be saved as APNG animation.
@@ -151,4 +192,14 @@ public class ApngBuilder {
 		return apng;
 	}
 
+	public String toString() {
+		StringBuffer sb=new StringBuffer();
+		sb.append(this.getClass().getSimpleName()+": ");
+		sb.append("PngEncoder enabled: "+flagPngEncoderEnabled);
+		sb.append(", ReEncode PNG: "+flagReencodePngFilesEnabled);
+		sb.append(", TransparentPixel: "+minimumNumberOfTransparentPixel);
+		sb.append(", TrueColour bits: "+numberOfTruecolourBits);
+		sb.append(", NumberOfColours: "+(maximumNumberOfColours==0?"TrueColour":maximumNumberOfColours));
+		return sb.toString();
+	}
 }

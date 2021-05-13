@@ -2,37 +2,18 @@ APNG builder
 ==
 Java API to create an Animated PNG file.
 
-Created for the [Ganimed](https://github.com/Moon70/Ganimed) tool, therefore the current interface is very limited.
+Created for the [Ganimed](https://github.com/Moon70/Ganimed) tool.
 
-This project is 'work in progress':
+Features:
 
-- **Version 0.0.1:** 
+- Creates an APNG from a series of files or BufferedImage objects.
+- Images get cropped, if top/bottom/left/right area is unchanged from the previous image.
+- Optional: Replace pixel, that are unchanged from the previous image, with transparent pixel. Depending on the animation, this can drastically reduce filesize.
+- Optional: Reducing bit depth. Depending on the animation, reducing 24bit truecolour to 21bit or 18bit is often hard to recognizable, but reduces filesize. This option is not lossless.
+- Optional: Converting 24bit truecolour to 255 (256) colour palette, using an own colour quantizer (see [GPAC](https://github.com/Moon70/GPAC)).
 
-  - Simply puts existing imagedata together and inserts the needed APNG chunks.
-  
-- **Version 0.2-SNAPSHOT:**
-  
-  - Added own PNG encoder
-  - Added APNG filtering
-  - Added Frame cutting
+**<u>This project is 'work in progress'.</u>**
 
-- **Version 0.3-SNAPSHOT:**
-  
-  - Using transparent pixel to reduce filesize
-  - Convert 24bit truecolour to 255 colour palette image, if lossless possible
-  - Added Logger (SLF4J)
+<u>Please notes: As long as version 1.0 is not final, i feel free to change the inferface any time :-)</u>
 
-- **Version 0.4-SNAPSHOT:**
-  
-  - Textual data can be added to the PNG
-  - Greyscale image support
-
-- **Version 0.5-SNAPSHOT:**
-  
-  - Optional reduction of bit depth (lossy conversion)
-
-
-- **Version 0.6-SNAPSHOT:**
-  
-  - Added colour quantizer (lossy conversion)
-
+For more details see the [wiki](https://github.com/Moon70/APNG-builder/wiki) pages, please.

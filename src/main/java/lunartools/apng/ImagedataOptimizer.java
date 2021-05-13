@@ -1,7 +1,12 @@
 package lunartools.apng;
 
-import lunartools.pngidatcodec.ImageTools;
-
+/**
+ * Optimizes the image to reduce filesize.
+ * <li>replacing pixel, that have not changed, with transparent pixel
+ * <li>cropping by removing top/bottom/left/right are that has not changed, compared to the previous image
+ * 
+ * @author Thomas Mattel
+ */
 public class ImagedataOptimizer {
 	private int[] intImage;
 	private byte[] imagedata;
@@ -10,7 +15,7 @@ public class ImagedataOptimizer {
 	private int width;
 	private int height;
 
-	public void optimizeImage(Png png) {
+	void optimizeImage(Png png) {
 		this.offsetX=0;
 		this.offsetY=0;
 
@@ -19,42 +24,22 @@ public class ImagedataOptimizer {
 		this.width=imageData.getWidth();
 		this.height=imageData.getHeight();
 
-		Png pngReference=png.getPreviousPng();
-		ImageData imageDataReference=pngReference.getImageData();
+		Png pngPrevious=png.getPreviousPng();
+		ImageData imageDataPrevious=pngPrevious.getImageData();
 
-		Color unusedColour=animData.findUnusedColour();
+		Color transparentColour=animData.getUnusedColour();
 		int[] intImage=imageData.getRgbInts().clone();
-		int[] intReference=imageDataReference.getRgbInts().clone();
+		int[] intReference=imageDataPrevious.getRgbInts().clone();
 
-		//if(true) {
-		createOptimizedImage(intImage,intReference,unusedColour.getColor(),imageData,animData);
-		//}else {
-		//	this.imagedata=imageData.getImageBytes();
-		//}
-	}
-
-	private void createOptimizedImage(int[] intImage,int[] intReference,int unusedColour,ImageData imageData,AnimData animData) {
-		for(int i=0;i<intImage.length;i++) {
-			if(intImage[i]==intReference[i] && intImage[++i]==intReference[i]) {
-				intImage[i-1]=unusedColour;
-				intImage[i++]=unusedColour;
-				for(;i<intImage.length;i++) {
-					if(intImage[i]==intReference[i]) {
-						intImage[i]=unusedColour;
-					}else {
-						break;
-					}
-				}
-			}
+		int minimumNumberOfTransparentPixel=png.getBuilder().getMinimumNumberOfTransparentPixel();
+		if(minimumNumberOfTransparentPixel>0){
+//			replaceUnchangedPixelWithTransparentPixel(intImage,intReference,transparentColour.getColor());
+			replaceUnchangedPixelWithTransparentPixelNew(intImage,intReference,transparentColour.getColor(),minimumNumberOfTransparentPixel);
+			intImage=cropTransparentPixel(intImage,transparentColour.getColor());
+		}else {
+			intImage=cropUnchangedPixel(intImage,intReference);
 		}
-
-		//System.out.println("originalImagedata: "+intImage.length);
-		//System.out.println("\t"+width+" / "+height);
-		intImage=cropTransparent(intImage,unusedColour);
-		//		intImage=cropPixel(intImage,intReference);
-		//System.out.println("croppedImagedata: "+intImage.length);
-		//System.out.println("\t"+width+" / "+height);
-
+		
 		if(animData.getNumberOfColours()>256) {
 			this.imagedata=ImageTools.changeIntRGBtoByteRGB(intImage);
 		}else if(animData.isGreyscale()){
@@ -62,10 +47,56 @@ public class ImagedataOptimizer {
 		}else {
 			this.imagedata=imageData.convertToPaletteImage(intImage);
 		}
-
 	}
 
-	private int[] cropTransparent(int[] intImage, int transparentColour) {
+	private void replaceUnchangedPixelWithTransparentPixel(int[] intImage,int[] intReference,int transparentPixel) {
+		for(int i=0;i<intImage.length-5;i++) {
+			if(intImage[i]==intReference[i] &&
+//					intImage[++i]==intReference[i] && 
+					intImage[++i]==intReference[i] && 
+					intImage[++i]==intReference[i] && 
+					intImage[++i]==intReference[i] && 
+					intImage[++i]==intReference[i]) {
+//				intImage[i-5]=transparentPixel;
+				intImage[i-4]=transparentPixel;
+				intImage[i-3]=transparentPixel;
+				intImage[i-2]=transparentPixel;
+				intImage[i-1]=transparentPixel;
+				intImage[i++]=transparentPixel;
+				for(;i<intImage.length;i++) {
+					if(intImage[i]==intReference[i]) {
+						intImage[i]=transparentPixel;
+					}else {
+						break;
+					}
+				}
+			}
+		}
+	}
+	
+	private void replaceUnchangedPixelWithTransparentPixelNew(int[] intImage,int[] intReference,int transparentPixel, int min) {
+		pixelcompareloop:
+		for(int i=0;i<intImage.length-min;i++) {
+			int s=i+min;
+			for(;i<s;i++) {
+				if(intImage[i]!=intReference[i]) {
+					continue pixelcompareloop;
+				}
+			}
+			for(i-=min;i<s;i++) {
+				intImage[i]=transparentPixel;
+			}
+			for(;i<intImage.length;i++) {
+				if(intImage[i]==intReference[i]) {
+					intImage[i]=transparentPixel;
+				}else {
+					break;
+				}
+			}
+		}
+	}
+	
+	private int[] cropTransparentPixel(int[] intImage, int transparentColour) {
 		int top;
 		searchTopBorder:
 			for(top=0;top<height;top++) {
@@ -121,11 +152,10 @@ public class ImagedataOptimizer {
 				newInts[index++]=intImage[y*widthOriginal+x];
 			}
 		}
-
 		return newInts;
 	}
 
-	private int[] cropPixel(int[] intImage, int[] intImageReference) {
+	private int[] cropUnchangedPixel(int[] intImage, int[] intImageReference) {
 		int top;
 		searchTopBorder:
 			for(top=0;top<height;top++) {
@@ -167,7 +197,7 @@ public class ImagedataOptimizer {
 					}
 				}
 			}
-
+		
 		int widthOriginal=width;
 		offsetX=left;
 		offsetY=top;
@@ -181,34 +211,34 @@ public class ImagedataOptimizer {
 				newInts[index++]=intImage[y*widthOriginal+x];
 			}
 		}
-
 		return newInts;
 	}
 
-	public byte[] getImagedata() {
+	byte[] getImagedata() {
 		return imagedata;
 	}
 
-	public int[] getImagedataInt() {
+	int[] getImagedataInt() {
 		return intImage;
 	}
 
-	public int getwidth() {
+	int getwidth() {
 		return width;
 	}
 
-	public int getHeight() {
+	int getHeight() {
 		return height;
 	}
 
-	public int getOffsetX() {
+	int getOffsetX() {
 		return offsetX;
 	}
 
-	public int getOffsetY() {
+	int getOffsetY() {
 		return offsetY;
 	}
 
+	@Override
 	public String toString() {
 		StringBuffer sb=new StringBuffer();
 		sb.append("ImagedataOptimizer");
