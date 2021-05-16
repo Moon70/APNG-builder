@@ -10,8 +10,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Builds an APNG (Animated Portable Network Graphic).
- * <br><br><b>This is an alpha version.
- * <br>Please note this is a draft, the interface may change.
+ * <br><br><b>This is an alpha version, the interface may change.
  * </b>
  * 
  * @author Thomas Mattel
@@ -23,7 +22,8 @@ public class ApngBuilder {
 	private int minimumNumberOfTransparentPixel=3;
 	private int numberOfTruecolourBits=8;
 	private int maximumNumberOfColours;
-
+	private int imageDataChunkSize=65536;
+	
 	/**
 	 * To enable/disable the PNG encoder.
 	 * <br>enabled (default): APNG-builder uses it´s own PNG encoder, using some APNG features to reduce the filesize.
@@ -109,30 +109,70 @@ public class ApngBuilder {
 		return this;
 	}
 
+	/** The minimum number of unchanged pixel, before they get replaced with transparent pixel */
 	int getMinimumNumberOfTransparentPixel() {
 		return minimumNumberOfTransparentPixel;
 	}
 
+	/**
+	 * The number of bits for each colour component red/green/blue.
+	 * <br>Default is 8 for those three components to get 8*3=24 bit truecolour.
+	 * <br>Setting to a lower value reduces both image quality and filesize. Depending on the animation, the quality loss is
+	 * not or hardly noticeable.
+	 * <br>This is no lossless operation.
+	 * @param numberOfBits
+	 * @return
+	 */
 	public ApngBuilder setNumberOfTruecolourBits(int numberOfBits) {
 		this.numberOfTruecolourBits=numberOfBits;
 		logger.debug("TrueColour number of bits: {}",this.numberOfTruecolourBits);
 		return this;
 	}
 
+	/** @return The number of bits for each colour component red/green/blue */
 	int getNumberOfTruecolourBits() {
 		return this.numberOfTruecolourBits;
 	}
 
+	/**
+	 * Sets the maximum colours of the animation.
+	 * <br>The total number of used colours (all images of the animation) gets reduced to the given value.
+	 * <br>The value <code>0</code> (default) disables this function.
+	 * <br>When setting this value to 256, the PNG encoder might decide to convert to a 256 colours palette image.
+	 * <br>When setting this value to 255 (or lower), the PNG encoder will convert to a 256 (or lower) colours palette image, using 255 (or lower) colours plus one transparent colour.
+	 * 
+	 * @param numberOfColours
+	 * @return
+	 */
 	public ApngBuilder setMaximumNumberOfColours(int numberOfColours) {
 		this.maximumNumberOfColours=numberOfColours;
-		logger.debug("TNumber of colours for quantizer: {}",this.maximumNumberOfColours);
+		logger.debug("Number of colours for quantizer: {}",this.maximumNumberOfColours);
 		return this;
 	}
 
+	/** the maximum colours of the animation (all images) */
 	int getMaximumNumberOfColours() {
 		return this.maximumNumberOfColours;
 	}
 
+	/**
+	 * Sets the image data chunk size.
+	 * <br>The compressed image data gets split in several imagedata chunks.
+	 * <br>The default imagedata chunk size is 64k (65536 bytes).
+	 * 
+	 * @param imageDataChunkSize
+	 * @return
+	 */
+	public ApngBuilder setImageDataChunkSize(int imageDataChunkSize) {
+		this.imageDataChunkSize=imageDataChunkSize;
+		logger.debug("Image data chunk size: {}",this.imageDataChunkSize);
+		return this;
+	}
+	
+	int getImageDataChunkSize() {
+		return this.imageDataChunkSize;
+	}
+	
 	/**
 	 * Builds a PNG from a given file.
 	 * <br>The file can be any image file that Java can read.
@@ -142,7 +182,7 @@ public class ApngBuilder {
 	 * @return
 	 * @throws IOException
 	 */
-	public Png buildPng(File image) throws IOException{
+ 	public Png buildPng(File image) throws IOException{
 		if(image==null) {
 			throw new NullPointerException("image");
 		}

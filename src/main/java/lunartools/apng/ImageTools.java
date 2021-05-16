@@ -12,9 +12,14 @@ import java.io.File;
 
 import javax.swing.JFrame;
 
+/**
+ * Just some helper methods, some very unoptimized...
+ * 
+ * @author Thomas Mattel
+ */
 public class ImageTools {
 
-	static byte[] changeIntGreyscaleToByteGreyscale(int[] intbuffer) {
+	static byte[] convertIntGreyscaleToByteGreyscale(int[] intbuffer) {
 		byte[] bytes=new byte[intbuffer.length];
 		for(int i=0;i<intbuffer.length;i++) {
 			bytes[i]=(byte)(intbuffer[i]&0xff);
@@ -22,21 +27,18 @@ public class ImageTools {
 		return bytes;
 	}
 
-	 static byte[] changeIntRGBtoByteRGB(int[] intbuffer) {
+	static byte[] convertIntRGBtoByteRGB(int[] intbuffer) {
 		ByteArrayOutputStream baos=new ByteArrayOutputStream();
 		for(int i=0;i<intbuffer.length;i++) {
 			int pixel=intbuffer[i];
-			int red=(pixel>>16)&0xff;
-			int green=(pixel>>8)&0xff;
-			int blue=pixel&0xff;
-			baos.write(red);
-			baos.write(green);
-			baos.write(blue);
+			baos.write((pixel>>16)&0xff);
+			baos.write((pixel>>8)&0xff);
+			baos.write(pixel&0xff);
 		}
 		return baos.toByteArray();
 	}
 
-	private static void changeByteBGRtoByteRGB(byte[] data) {
+	private static void convertByteBGRtoByteRGB(byte[] data) {
 		byte b;
 		for(int i=0;i<data.length;i+=3) {
 			b=data[i];
@@ -45,7 +47,7 @@ public class ImageTools {
 		}
 	}
 
-	private static int[] changeByteBGRtoIntRGB(byte[] data) {
+	private static int[] convertByteBGRtoIntRGB(byte[] data) {
 		int[] dataInt=new int[data.length/3];
 		int rgb;
 		int b;
@@ -89,11 +91,11 @@ public class ImageTools {
 		DataBuffer databuffer=bufferedImage.getRaster().getDataBuffer();
 		if(databuffer instanceof DataBufferInt) {
 			int[] intImagedata=((DataBufferInt)databuffer).getData();
-			byte[] byteImagedata=changeIntRGBtoByteRGB(intImagedata);
+			byte[] byteImagedata=convertIntRGBtoByteRGB(intImagedata);
 			return byteImagedata;
 		}else if(databuffer instanceof DataBufferByte) {
 			byte[] byteImagedata=((DataBufferByte)databuffer).getData().clone();
-			changeByteBGRtoByteRGB(byteImagedata);
+			convertByteBGRtoByteRGB(byteImagedata);
 			return byteImagedata;
 		}else {
 			throw new RuntimeException("databuffer not supported: "+databuffer.getClass().getName());
@@ -110,7 +112,7 @@ public class ImageTools {
 			return intImagedata;
 		}else if(databuffer instanceof DataBufferByte) {
 			byte[] byteImagedata=((DataBufferByte)databuffer).getData().clone();
-			int[] intImagedata=changeByteBGRtoIntRGB(byteImagedata);
+			int[] intImagedata=convertByteBGRtoIntRGB(byteImagedata);
 			return intImagedata;
 		}else {
 			throw new RuntimeException("databuffer not supported: "+databuffer.getClass().getName());

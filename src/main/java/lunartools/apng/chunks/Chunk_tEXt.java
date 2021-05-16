@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
-import lunartools.apng.ByteTools;
+import lunartools.ByteTools;
 
 /**
  * Textual data
@@ -17,10 +17,38 @@ public class Chunk_tEXt extends Chunk{
 	private static final byte NULL_SEPARATOR=0;
 	private static final int lENGTH_OF_NULL_SEPARATOR=1;
 
+	/**
+	 * Creates textual data chunk from PNG data.
+	 * 
+	 * @param png The complete data of a PNG file.
+	 * @param index Index to the chunk data.
+	 * @param length The chunk length.
+	 */
 	Chunk_tEXt(byte[] png, Integer index,Integer length) {
 		super(png, index,length);
 	}
 
+	/**
+	 * Create new textual data chunk.
+	 * <br>The PNG specification suggests to use one of these keywords:
+	 * <li>Title
+	 * <li>Author
+	 * <li>Description
+	 * <li>Copyright
+	 * <li>Creation Time
+	 * <li>Software
+	 * <li>Disclaimer
+	 * <li>Warning
+	 * <li>Source
+	 * <li>Comment
+	 * <br>but 'other keywords may be defined for other purposes'.
+	 * <br>Please consult the specification for more information.
+	 * 
+	 * @param keyword The keyword
+	 * @param text The textual data
+	 * @throws UnsupportedEncodingException
+	 * @see <a href="https://www.w3.org/TR/PNG/#11keywords">Keywords, Portable Network Graphics (PNG) Specification (Second Edition)</a>
+	 */
 	public Chunk_tEXt(String keyword, String text) throws UnsupportedEncodingException {
 		if(keyword==null) {
 			throw new NullPointerException("keyword");
@@ -43,13 +71,13 @@ public class Chunk_tEXt extends Chunk{
 		setDataLength(length);
 		try {
 			ByteArrayOutputStream baos=new ByteArrayOutputStream();
-			baos.write(ByteTools.longwordToBytearray(length));
+			baos.write(ByteTools.bLongwordToBytearray(length));
 			baos.write(TYPE.getBytes());
 			baos.write(baKeyword);
 			baos.write(NULL_SEPARATOR);
 			baos.write(baText);
 
-			baos.write(ByteTools.longwordToBytearray(0));//CRC, calculated later
+			baos.write(ByteTools.bLongwordToBytearray(0));//CRC, calculated later
 			data=baos.toByteArray();
 		} catch (Exception e) {
 			throw new RuntimeException("Could not create "+TYPE+" bytearray",e);
@@ -69,7 +97,7 @@ public class Chunk_tEXt extends Chunk{
 		byte[] chunkData=getChunkData();
 		int i=indexOfNullSeparator(chunkData);
 		if(i==-1) {
-			throw new RuntimeException("no null separator in tEXt chunk");
+			throw new RuntimeException("no null separator in "+TYPE+" chunk");
 		}
 		try {
 			return new String(Arrays.copyOfRange(chunkData, 0, i),"ISO-8859-1");
@@ -82,7 +110,7 @@ public class Chunk_tEXt extends Chunk{
 		byte[] chunkData=getChunkData();
 		int i=indexOfNullSeparator(chunkData);
 		if(i==-1) {
-			throw new RuntimeException("no null separator in tEXt chunk");
+			throw new RuntimeException("no null separator in "+TYPE+" chunk");
 		}
 		try {
 			return new String(Arrays.copyOfRange(chunkData, i+lENGTH_OF_NULL_SEPARATOR, chunkData.length),"ISO-8859-1");

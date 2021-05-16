@@ -33,7 +33,6 @@ public class ImagedataOptimizer {
 
 		int minimumNumberOfTransparentPixel=png.getBuilder().getMinimumNumberOfTransparentPixel();
 		if(minimumNumberOfTransparentPixel>0){
-//			replaceUnchangedPixelWithTransparentPixel(intImage,intReference,transparentColour.getColor());
 			replaceUnchangedPixelWithTransparentPixelNew(intImage,intReference,transparentColour.getColor(),minimumNumberOfTransparentPixel);
 			intImage=cropTransparentPixel(intImage,transparentColour.getColor());
 		}else {
@@ -41,39 +40,14 @@ public class ImagedataOptimizer {
 		}
 		
 		if(animData.getNumberOfColours()>256) {
-			this.imagedata=ImageTools.changeIntRGBtoByteRGB(intImage);
+			this.imagedata=ImageTools.convertIntRGBtoByteRGB(intImage);
 		}else if(animData.isGreyscale()){
-			this.imagedata=ImageTools.changeIntGreyscaleToByteGreyscale(intImage);
+			this.imagedata=ImageTools.convertIntGreyscaleToByteGreyscale(intImage);
 		}else {
 			this.imagedata=imageData.convertToPaletteImage(intImage);
 		}
 	}
 
-	private void replaceUnchangedPixelWithTransparentPixel(int[] intImage,int[] intReference,int transparentPixel) {
-		for(int i=0;i<intImage.length-5;i++) {
-			if(intImage[i]==intReference[i] &&
-//					intImage[++i]==intReference[i] && 
-					intImage[++i]==intReference[i] && 
-					intImage[++i]==intReference[i] && 
-					intImage[++i]==intReference[i] && 
-					intImage[++i]==intReference[i]) {
-//				intImage[i-5]=transparentPixel;
-				intImage[i-4]=transparentPixel;
-				intImage[i-3]=transparentPixel;
-				intImage[i-2]=transparentPixel;
-				intImage[i-1]=transparentPixel;
-				intImage[i++]=transparentPixel;
-				for(;i<intImage.length;i++) {
-					if(intImage[i]==intReference[i]) {
-						intImage[i]=transparentPixel;
-					}else {
-						break;
-					}
-				}
-			}
-		}
-	}
-	
 	private void replaceUnchangedPixelWithTransparentPixelNew(int[] intImage,int[] intReference,int transparentPixel, int min) {
 		pixelcompareloop:
 		for(int i=0;i<intImage.length-min;i++) {
@@ -106,10 +80,13 @@ public class ImagedataOptimizer {
 					}
 				}
 			}
-
+//TODO: This is a temporary fix to avoid an overflow when cropping two ident images. In a later version, an ident image will be eliminated so that this fix can be removed
+if(top==height) {
+	top--;
+}
 		int bottom;
 		searchBottomBorder:
-			for(bottom=height-1;bottom>=0;bottom--) {
+			for(bottom=height-1;bottom>top;bottom--) {
 				for(int x=0;x<width;x++) {
 					if(intImage[bottom*width+x]!=transparentColour) {
 						break searchBottomBorder;
@@ -127,10 +104,13 @@ public class ImagedataOptimizer {
 					}
 				}
 			}
-
+//TODO: This is a temporary fix to avoid an overflow when cropping two ident images. In a later version, an ident image will be eliminated so that this fix can be removed
+if(left==width) {
+	left--;
+}
 		int right;
 		searchRightBorder:
-			for(right=width-1;right>=0;right--) {
+			for(right=width-1;right>left;right--) {
 				for(int y=top;y<=bottom;y++) {
 					int index=y*width+right;
 					if(intImage[index]!=transparentColour) {
@@ -165,10 +145,13 @@ public class ImagedataOptimizer {
 					}
 				}
 			}
-
+//TODO: This is a temporary fix to avoid an overflow when cropping two ident images. In a later version, an ident image will be eliminated so that this fix can be removed
+if(top==height) {
+	top--;
+}
 		int bottom;
 		searchBottomBorder:
-			for(bottom=height-1;bottom>=0;bottom--) {
+			for(bottom=height-1;bottom>top;bottom--) {
 				for(int x=0;x<width;x++) {
 					if(intImage[bottom*width+x]!=intImageReference[bottom*width+x]) {
 						break searchBottomBorder;
@@ -186,10 +169,13 @@ public class ImagedataOptimizer {
 					}
 				}
 			}
-
+//TODO: This is a temporary fix to avoid an overflow when cropping two ident images. In a later version, an ident image will be eliminated so that this fix can be removed
+if(left==width) {
+	left--;
+}
 		int right;
 		searchRightBorder:
-			for(right=width-1;right>=0;right--) {
+			for(right=width-1;right>left;right--) {
 				for(int y=top;y<=bottom;y++) {
 					int index=y*width+right;
 					if(intImage[index]!=intImageReference[index]) {

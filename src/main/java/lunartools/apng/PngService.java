@@ -16,9 +16,9 @@ import org.slf4j.LoggerFactory;
 import lunartools.apng.chunks.Chunk_IDAT;
 import lunartools.apng.chunks.Chunk_IEND;
 import lunartools.apng.chunks.Chunk_IHDR;
+import lunartools.apng.chunks.Chunk_IHDR.ColourType;
 import lunartools.apng.chunks.Chunk_PLTE;
 import lunartools.apng.chunks.Chunk_tRNS;
-import lunartools.pngidatcodec.PngEncoder;
 
 public class PngService {
 	private static Logger logger = LoggerFactory.getLogger(PngService.class);
@@ -41,23 +41,23 @@ public class PngService {
 			AnimData animData=png.getAnimData();
 			int numberOfColours=animData.getNumberOfColours();
 			int bitdepth;
-			int colourtype;
+			ColourType colourtype;
 			Chunk_PLTE chunk_PLTE=null;
 			Chunk_tRNS chunk_tRNS=null;
-			if(numberOfColours>255) {
+			int maxPaletteColours=png.getFirstPng().getBuilder().getMinimumNumberOfTransparentPixel()==0?256:255;
+			if(numberOfColours>maxPaletteColours) {
 				bitdepth=8;
-				colourtype=Chunk_IHDR.COLOURTYPE_TRUECOLOUR;
+				colourtype=ColourType.TRUECOLOUR;
 				Color unusedColour=animData.getUnusedColour();
 				chunk_tRNS=new Chunk_tRNS(unusedColour.getRed(),unusedColour.getGreen(),unusedColour.getBlue());
-
 			}else if(animData.isGreyscale()) {
 				bitdepth=8;
-				colourtype=Chunk_IHDR.COLOURTYPE_GREYSCALE;
+				colourtype=ColourType.GREYSCALE;
 				Color unusedColour=animData.getUnusedColour();
 				chunk_tRNS=new Chunk_tRNS(unusedColour.getColor());
 			}else {
 				bitdepth=8;
-				colourtype=Chunk_IHDR.COLOURTYPE_INDEXEDCOLOUR;
+				colourtype=ColourType.INDEXEDCOLOUR;
 				ArrayList<Color> palette=animData.getPalette();
 				chunk_PLTE=new Chunk_PLTE(palette);
 				int[] alphaPalette=new int[palette.size()];
@@ -71,39 +71,33 @@ public class PngService {
 			Chunk_IHDR chunk_IHDR;
 			logger.debug("Creating PNG using PngEncoder");
 			if(png.getPreviousPng()==null) {
+				logger.trace("create primary PNG");
 				PngEncoder pngEncoder=new PngEncoder();
 				int width=imageData.getWidth();
 				int height=imageData.getHeight();
-				baImageRaw=pngEncoder.encodePng(imageData.getImageBytes(), width, height,animData.getBytesPerPixel(),animData.isGreyscale());
+				baImageRaw=pngEncoder.encodePng(imageData.getImageBytes(), width, height,animData.getBytesPerPixel());
 				chunk_IHDR=new Chunk_IHDR(width, height, bitdepth, colourtype);
-				logger.trace("IHDR 1: {}",chunk_IHDR);
 			}else {
+				logger.trace("create secondary PNG");
 				ImagedataOptimizer imagedataOptimizer=new ImagedataOptimizer();
 				imagedataOptimizer.optimizeImage(png);
 				//System.out.println("imagedataOptimizer: "+imagedataOptimizer);
-
-				baImageRaw=new PngEncoder().encodePng(imagedataOptimizer.getImagedata(),imagedataOptimizer.getwidth(),imagedataOptimizer.getHeight(),animData.getBytesPerPixel(),animData.isGreyscale());
+				baImageRaw=new PngEncoder().encodePng(imagedataOptimizer.getImagedata(),imagedataOptimizer.getwidth(),imagedataOptimizer.getHeight(),animData.getBytesPerPixel());
 				chunk_IHDR=new Chunk_IHDR(imagedataOptimizer.getwidth(), imagedataOptimizer.getHeight(), bitdepth, colourtype);
-				logger.trace("IHDR +: {}",chunk_IHDR);
-				png.setOffset(imagedataOptimizer.getOffsetX(),imagedataOptimizer.getOffsetY());
-				logger.trace("offset {} / {}",imagedataOptimizer.getOffsetX(),imagedataOptimizer.getOffsetY());
+				png.setOffsets(imagedataOptimizer.getOffsetX(),imagedataOptimizer.getOffsetY());
 			}
 			png.addChunk(chunk_IHDR);
-
 			if(chunk_PLTE!=null) {
-				logger.trace("adding palette chunk: {}",chunk_PLTE);
 				png.addChunk(chunk_PLTE);
 			}
-
 			if(chunk_tRNS!=null) {
-				logger.trace("adding tRNS chunk: {}",chunk_tRNS);
 				png.addChunk(chunk_tRNS);
 			}
 
 			ByteArrayOutputStream baos=new ByteArrayOutputStream();
 			Deflater deflater=new Deflater(Deflater.BEST_COMPRESSION,false);
-			deflater.setStrategy(Deflater.HUFFMAN_ONLY);
-//			deflater.setStrategy(Deflater.FILTERED);
+//			deflater.setStrategy(Deflater.HUFFMAN_ONLY);
+			deflater.setStrategy(Deflater.FILTERED);
 //			deflater.setStrategy(Deflater.DEFAULT_STRATEGY);
 //			deflater.setStrategy(Deflater.NO_FLUSH);
 			DeflaterOutputStream deflaterOutputStream=new DeflaterOutputStream(baos,deflater);
@@ -113,7 +107,7 @@ public class PngService {
 			deflaterOutputStream.close();
 			byte[] imagedataCompressed=baos.toByteArray();
 
-			final int chunkdatasize=65536;
+			final int chunkdatasize=png.getBuilder().getImageDataChunkSize();
 			for(int i=0;i<imagedataCompressed.length;i+=chunkdatasize) {
 				int len=i+chunkdatasize;
 				if(len>imagedataCompressed.length) {

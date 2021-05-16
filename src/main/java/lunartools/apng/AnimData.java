@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import lunartools.apng.chunks.Chunk_IHDR;
+import lunartools.apng.chunks.Chunk_IHDR.ColourType;
 import lunartools.colorquantizer.GPAC_experimental;
 
 /**
@@ -18,7 +18,7 @@ class AnimData {
 	private Png png;
 	private int numberOfColours;
 	private Color unusedColour;
-	private int colourtype;
+	private ColourType colourtype;
 	private int bytesPerPixel;
 	private boolean flagIsGreyscale;
 	private ArrayList<Color> palette;
@@ -54,6 +54,7 @@ class AnimData {
 	/**
 	 * Returns the common colour palette of all images of this animation.
 	 * <br>If the colourtype is not indexed colour, then <code>null</code> is returned
+	 * 
 	 * @return the common colour palette of all images of this animation, or null
 	 */
 	ArrayList<Color> getPalette(){
@@ -63,6 +64,11 @@ class AnimData {
 		return palette;
 	}
 
+	/**
+	 * An unused colour, or <code>null</code> if there is no unused colour.
+	 * 
+	 * @return An unused colour, or <code>null</code> if there is no unused colour
+	 */
 	Color getUnusedColour() {
 		if(unusedColour==null) {
 			analyzeImages();
@@ -77,7 +83,7 @@ class AnimData {
 		return bytesPerPixel;
 	}
 
-	int getColourType() {
+	ColourType getColourType() {
 		if(bytesPerPixel==0) {
 			analyzeImages();
 		}
@@ -176,18 +182,18 @@ class AnimData {
 		numberOfColours=count;
 		logger.debug("number of colours: {}",numberOfColours);
 		if(count>256) {
-			colourtype=Chunk_IHDR.COLOURTYPE_TRUECOLOUR;
+			colourtype=ColourType.TRUECOLOUR;
 			bytesPerPixel=3;
 			logger.debug("colour type is truecolour");
 		}else{
 			this.flagIsGreyscale=isGreyscale;
 			bytesPerPixel=1;
 			if(isGreyscale) {
-				colourtype=Chunk_IHDR.COLOURTYPE_GREYSCALE;
+				colourtype=ColourType.GREYSCALE;
 				logger.debug("colour type is greyscale");
 			}else {
 				this.palette=palette;
-				colourtype=Chunk_IHDR.COLOURTYPE_INDEXEDCOLOUR;
+				colourtype=ColourType.INDEXEDCOLOUR;
 				logger.debug("colour type is indexed colour");
 			}
 		}
@@ -202,7 +208,7 @@ class AnimData {
 			}
 		}
 		for(int i=0;i<intImage.length;i++) {
-			intImage[i]=intImage[i]&masc;
+			intImage[i]&=masc;
 		}
 	}
 

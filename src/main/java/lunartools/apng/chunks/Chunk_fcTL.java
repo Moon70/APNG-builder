@@ -3,7 +3,7 @@ package lunartools.apng.chunks;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import lunartools.apng.ByteTools;
+import lunartools.ByteTools;
 
 /**
  * APNG Frame Control Chunk.
@@ -14,22 +14,6 @@ import lunartools.apng.ByteTools;
 public class Chunk_fcTL extends Chunk{
 	public static final String TYPE="fcTL";
 	private static final int LENGTH_CHUNKDATA=26;
-
-	/** APNG specification: no disposal is done on this frame before rendering the next; the contents of the output buffer are left as is. */
-	public static final int APNG_DISPOSE_OP_NONE=0;
-
-	/** APNG specification: the frame's region of the output buffer is to be cleared to fully transparent black before rendering the next frame. */
-	public static final int APNG_DISPOSE_OP_BACKGROUND=1;
-
-	/** APNG specification: the frame's region of the output buffer is to be reverted to the previous contents before rendering the next frame. */
-	public static final int APNG_DISPOSE_OP_PREVIOUS=2;
-
-	/** APNG specification: all color components of the frame, including alpha, overwrite the current contents of the frame's output buffer region. */
-	public static final int APNG_BLEND_OP_SOURCE=0;
-
-	/** APNG specification: the frame should be composited onto the output buffer based on its alpha, using a simple OVER operation as described in the "Alpha Channel Processing" section of the PNG specification [PNG-1.2]. Note that the second variation of the sample code is applicable. */
-	public static final int APNG_BLEND_OP_OVER=1;
-
 	private static final int OFFSET_SEQUENCE_NUMBER=DATAOFFSET+	 0;
 	private static final int OFFSET_WIDTH=DATAOFFSET+			 4;
 	private static final int OFFSET_HEIGHT=DATAOFFSET+			 8;
@@ -40,27 +24,75 @@ public class Chunk_fcTL extends Chunk{
 	private static final int OFFSET_DISPOSE_OP=DATAOFFSET+		24;
 	private static final int OFFSET_BLEND_OP=DATAOFFSET+		25;
 
+	public enum ApngDisposeOperation{
+		/** APNG specification: no disposal is done on this frame before rendering the next; the contents of the output buffer are left as is. */
+		NONE(0),
+		/** APNG specification: the frame's region of the output buffer is to be cleared to fully transparent black before rendering the next frame. */
+		BACKGROUND(1),
+		/** APNG specification: the frame's region of the output buffer is to be reverted to the previous contents before rendering the next frame. */
+		PREVIOUS(2);
+
+		private final int value;
+
+		private ApngDisposeOperation(int value) {
+			this.value=value;
+		}
+	}
+	
+	public enum ApngBlendOperation{
+		/** APNG specification: all color components of the frame, including alpha, overwrite the current contents of the frame's output buffer region. */
+		SOURCE(0),
+		/** APNG specification: the frame should be composited onto the output buffer based on its alpha, using a simple OVER operation as described in the "Alpha Channel Processing" section of the PNG specification [PNG-1.2]. Note that the second variation of the sample code is applicable. */
+		OVER(1);
+
+		private final int value;
+
+		private ApngBlendOperation(int value) {
+			this.value=value;
+		}
+	}
+	
+	/**
+	 * Creates frame control chunk from PNG data.
+	 * 
+	 * @param png The complete data of a PNG file.
+	 * @param index Index to the chunk data.
+	 * @param length The chunk length.
+	 */
 	Chunk_fcTL(byte[] png, Integer index,Integer length) {
 		super(png, index,length);
 	}
 
-	public Chunk_fcTL(int sequenceNumber,int width,int height,int offsetX, int offsetY,int delay_num,int delay_den,int dispose_op,int blend_op) {
+	/**
+	 * Creates new frame control chunk.
+	 * 
+	 * @param sequenceNumber
+	 * @param width
+	 * @param height
+	 * @param offsetX
+	 * @param offsetY
+	 * @param delay_num
+	 * @param delay_den
+	 * @param dispose_op
+	 * @param blend_op
+	 */
+	public Chunk_fcTL(int sequenceNumber,int width,int height,int offsetX, int offsetY,int delay_num,int delay_den,ApngDisposeOperation dispose_op,ApngBlendOperation blend_op) {
 		int length=LENGTH_CHUNKDATA;
 		setDataLength(length);
 		try {
 			ByteArrayOutputStream baos=new ByteArrayOutputStream();
-			baos.write(ByteTools.longwordToBytearray(length));
+			baos.write(ByteTools.bLongwordToBytearray(length));
 			baos.write(TYPE.getBytes());
-			baos.write(ByteTools.longwordToBytearray(sequenceNumber));
-			baos.write(ByteTools.longwordToBytearray(width));
-			baos.write(ByteTools.longwordToBytearray(height));
-			baos.write(ByteTools.longwordToBytearray(offsetX));
-			baos.write(ByteTools.longwordToBytearray(offsetY));
-			baos.write(ByteTools.wordToBytearray(delay_num));
-			baos.write(ByteTools.wordToBytearray(delay_den));
-			baos.write((byte)dispose_op);
-			baos.write((byte)blend_op);
-			baos.write(ByteTools.longwordToBytearray(0));//CRC, calculated later
+			baos.write(ByteTools.bLongwordToBytearray(sequenceNumber));
+			baos.write(ByteTools.bLongwordToBytearray(width));
+			baos.write(ByteTools.bLongwordToBytearray(height));
+			baos.write(ByteTools.bLongwordToBytearray(offsetX));
+			baos.write(ByteTools.bLongwordToBytearray(offsetY));
+			baos.write(ByteTools.bWordToBytearray(delay_num));
+			baos.write(ByteTools.bWordToBytearray(delay_den));
+			baos.write((byte)dispose_op.value);
+			baos.write((byte)blend_op.value);
+			baos.write(ByteTools.bLongwordToBytearray(0));//CRC, calculated later
 			data=baos.toByteArray();
 		} catch (IOException e) {
 			throw new RuntimeException("Could not create "+TYPE+" bytearray",e);
@@ -69,47 +101,47 @@ public class Chunk_fcTL extends Chunk{
 
 	/** (unsigned int)   Sequence number of the animation chunk, starting from 0 */
 	private int getSequenceNumber() {
-		return (int)ByteTools.bytearrayToLongword(data,getIndex()+OFFSET_SEQUENCE_NUMBER);
+		return (int)ByteTools.bBytearrayToLongword(data,getOffset()+OFFSET_SEQUENCE_NUMBER);
 	}
 
 	/** (unsigned int)   Width of the following frame */
 	private int getWidth() {
-		return (int)ByteTools.bytearrayToLongword(data,getIndex()+OFFSET_WIDTH);
+		return (int)ByteTools.bBytearrayToLongword(data,getOffset()+OFFSET_WIDTH);
 	}
 
 	/** (unsigned int)   Height of the following frame */
 	private int getHeight() {
-		return (int)ByteTools.bytearrayToLongword(data,getIndex()+OFFSET_HEIGHT);
+		return (int)ByteTools.bBytearrayToLongword(data,getOffset()+OFFSET_HEIGHT);
 	}
 
 	/** (unsigned int)   X position at which to render the following frame */
 	private int getXOffset() {
-		return (int)ByteTools.bytearrayToLongword(data,getIndex()+OFFSET_X_OFFSET);
+		return (int)ByteTools.bBytearrayToLongword(data,getOffset()+OFFSET_X_OFFSET);
 	}
 
 	/** (unsigned int)   Y position at which to render the following frame */
 	private int getYOffset() {
-		return (int)ByteTools.bytearrayToLongword(data,getIndex()+OFFSET_Y_OFFSET);
+		return (int)ByteTools.bBytearrayToLongword(data,getOffset()+OFFSET_Y_OFFSET);
 	}
 
 	/** (unsigned short) Frame delay fraction numerator */
 	private int getDelayNum() {
-		return (int)ByteTools.bytearrayToWord(data,getIndex()+OFFSET_DELAY_NUM);
+		return (int)ByteTools.bBytearrayToWord(data,getOffset()+OFFSET_DELAY_NUM);
 	}
 
 	/** (unsigned short) Frame delay fraction denominator */
 	private int getDelayDen() {
-		return (int)ByteTools.bytearrayToWord(data,getIndex()+OFFSET_DELAY_DEN);
+		return (int)ByteTools.bBytearrayToWord(data,getOffset()+OFFSET_DELAY_DEN);
 	}
 
 	/** (byte)           Type of frame area disposal to be done after rendering this frame */
 	private int getDisposeOp() {
-		return (int)ByteTools.bytearrayToByte(data,getIndex()+OFFSET_DISPOSE_OP);
+		return (int)ByteTools.bytearrayToByte(data,getOffset()+OFFSET_DISPOSE_OP);
 	}
 
 	/** (byte)           Type of frame area rendering for this frame  */
 	private int getBlendOp() {
-		return (int)ByteTools.bytearrayToByte(data,getIndex()+OFFSET_BLEND_OP);
+		return (int)ByteTools.bytearrayToByte(data,getOffset()+OFFSET_BLEND_OP);
 	}
 
 	@Override

@@ -4,18 +4,12 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import lunartools.apng.chunks.Chunk_IHDR;
-
 /**
  * The imagedata of the 'source-image' used to create the Png object.
  * 
  * @author Thomas Mattel
  */
 class ImageData {
-	private static Logger logger = LoggerFactory.getLogger(ImageData.class);
 	private Png png;
 	private Object imagesource;
 	private BufferedImage bufferedImage;
@@ -58,13 +52,12 @@ class ImageData {
 				bufferedImage=ImageTools.createBufferedImageFromFile((File)imagesource);
 			}
 		}
-		//imageRgbInts=ImageTools.getRgbIntsFromBufferedImage(bufferedImage);
 		return bufferedImage;
 	}
 
 	/**
 	 * Returns pixeldata as bytearray.
-	 * 	 * <br>Depending on colourtype, a pixel consists of
+	 * <br>Depending on colourtype, a pixel consists of
 	 * <li>greyscale: one byte containing a 8 bit greyscale value
 	 * <li>indexed colour: one byte containing the 8 bit colour table index
 	 * <li>truecolour: three bytes, red green blue, 8 bit colour value each
@@ -73,9 +66,9 @@ class ImageData {
 	 */
 	byte[] getImageBytes() {
 		switch(png.getAnimData().getColourType()) {
-		case Chunk_IHDR.COLOURTYPE_TRUECOLOUR:
+		case TRUECOLOUR:
 			return ImageTools.getRgbBytesFromBufferedImage(getBufferedImage());
-		case Chunk_IHDR.COLOURTYPE_INDEXEDCOLOUR:
+		case INDEXEDCOLOUR:
 			int[] pixel=getRgbInts();
 			byte[] bytes=new byte[pixel.length];
 			int[] hashtable=new int[0x1000000];
@@ -87,8 +80,8 @@ class ImageData {
 				bytes[i]=(byte)hashtable[pixel[i]];
 			}
 			return bytes;
-		case Chunk_IHDR.COLOURTYPE_GREYSCALE:
-			return ImageTools.changeIntGreyscaleToByteGreyscale(getRgbInts());
+		case GREYSCALE:
+			return ImageTools.convertIntGreyscaleToByteGreyscale(getRgbInts());
 		default:
 			throw new RuntimeException("not supported colour type");
 		}
@@ -118,7 +111,7 @@ class ImageData {
 	 * 
 	 * @return the width of the image source
 	 */
-	public int getWidth() {
+	int getWidth() {
 		return getBufferedImage().getWidth();
 	}
 
@@ -127,7 +120,7 @@ class ImageData {
 	 * 
 	 * @return the height of the image source
 	 */
-	public int getHeight() {
+	int getHeight() {
 		return getBufferedImage().getHeight();
 	}
 

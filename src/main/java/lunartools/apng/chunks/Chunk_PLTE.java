@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import lunartools.apng.ByteTools;
+import lunartools.ByteTools;
 import lunartools.apng.Color;
 
 /**
@@ -17,16 +17,28 @@ import lunartools.apng.Color;
 public class Chunk_PLTE extends Chunk{
 	public static final String TYPE="PLTE";
 
+	/**
+	 * Creates palette chunk from PNG data.
+	 * 
+	 * @param png The complete data of a PNG file.
+	 * @param index Index to the chunk data.
+	 * @param length The chunk length.
+	 */
 	Chunk_PLTE(byte[] png, Integer index,Integer length) {
 		super(png, index,length);
 	}
 	
+	/**
+	 * Create new palette chunk.
+	 * 
+	 * @param palette An array of transparent colours
+	 */
 	public Chunk_PLTE(ArrayList<Color> palette) {
 		int length=palette.size()*3;
 		setDataLength(length);
 		try {
 			ByteArrayOutputStream baos=new ByteArrayOutputStream();
-			baos.write(ByteTools.longwordToBytearray(length));
+			baos.write(ByteTools.bLongwordToBytearray(length));
 			baos.write(TYPE.getBytes());
 			for(int i=0;i<palette.size();i++) {
 				Color color=palette.get(i);
@@ -34,7 +46,7 @@ public class Chunk_PLTE extends Chunk{
 				baos.write((byte)color.getGreen());
 				baos.write((byte)color.getBlue());
 			}
-			baos.write(ByteTools.longwordToBytearray(0));//CRC, calculated later
+			baos.write(ByteTools.bLongwordToBytearray(0));//CRC, calculated later
 			data=baos.toByteArray();
 		} catch (IOException e) {
 			throw new RuntimeException("Could not create "+TYPE+" bytearray",e);

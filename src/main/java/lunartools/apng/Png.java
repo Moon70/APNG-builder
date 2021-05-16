@@ -14,6 +14,11 @@ import java.util.ArrayList;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterOutputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import lunartools.ByteTools;
+import lunartools.FileTools;
 import lunartools.apng.chunks.Chunk;
 import lunartools.apng.chunks.ChunkFactory;
 import lunartools.apng.chunks.Chunk_IDAT;
@@ -21,15 +26,12 @@ import lunartools.apng.chunks.Chunk_IEND;
 import lunartools.apng.chunks.Chunk_IHDR;
 import lunartools.apng.chunks.Chunk_acTL;
 import lunartools.apng.chunks.Chunk_fcTL;
+import lunartools.apng.chunks.Chunk_fcTL.ApngBlendOperation;
+import lunartools.apng.chunks.Chunk_fcTL.ApngDisposeOperation;
 import lunartools.apng.chunks.Chunk_fdAT;
 import lunartools.apng.chunks.Chunk_tEXt;
-import lunartools.apng.chunks.Chunk_zEXt;
+import lunartools.apng.chunks.Chunk_zTXt;
 
-/*
- * PNG reference: https://www.w3.org/TR/PNG
- * APNG reference: https://wiki.mozilla.org/APNG_Specification
- * https://docs.fileformat.com/image/apng/
- */
 /**
  * Represents a PNG (Portable Network Graphics)
  * <br>A Png instance holds the binary data of a PNG file.
@@ -40,6 +42,7 @@ import lunartools.apng.chunks.Chunk_zEXt;
  * @author Thomas Mattel
  */
 public class Png {
+	private static Logger logger = LoggerFactory.getLogger(Png.class);
 	private static final byte[] PNG_SIGNATURE=new byte[] {(byte)0x89,(byte)0x50,(byte)0x4e,(byte)0x47,(byte)0x0d,(byte)0x0a,(byte)0x1a,(byte)0x0a};
 	private ApngBuilder builder;
 	private ImageData imageData;
@@ -134,7 +137,6 @@ public class Png {
 		return baos.toByteArray();
 	}
 	
-	//---------------------------------------------------------------------------------------------------------------------------------------------
 	/**
 	 * Processes the ImageData object of this PNG.
 	 * <br>
@@ -166,9 +168,6 @@ public class Png {
 			this.baPng=FileTools.readFileAsByteArray(imageFile);
 			parsePng();
 		}
-		//if(isApng()) {
-		//	throw new RuntimeException("file is an APNG: not supported yet");
-		//}
 	}
 
 	private void createPng() {
@@ -267,8 +266,10 @@ public class Png {
 	 * <br>All Png objects that were added to this Png object, will be combined to an APNG animation.
 	 * <br>If there are no added Png Objects, a PNG file will be created (not an one-image-APNG).
 	 * <br>How the (A)PNG is created depends on the settings of the builder that created this Png object.
+	 * <br>While processing, <code>ProgressCallback</code> is calles for each image.
 	 * 
-	 * @return PNG as bytearray
+	 * @param progressCallback
+	 * @return
 	 * @throws IOException
 	 */
 	public byte[] toByteArray(ProgressCallback progressCallback) throws IOException {
@@ -282,8 +283,10 @@ public class Png {
 	 * <br>All Png objects that were added to this Png object, will be combined to an APNG animation.
 	 * <br>If there are no added Png Objects, a PNG file will be created (not an one-image-APNG).
 	 * <br>How the (A)PNG is created depends on the settings of the builder that created this Png object.
+	 * <br>While processing, <code>ProgressCallback</code> is calles for each image.
 	 * 
 	 * @param outputStream
+	 * @param progressCallback
 	 * @throws IOException
 	 */
 	private void writePngToStream(OutputStream outputStream,ProgressCallback progressCallback) throws IOException {
@@ -303,11 +306,11 @@ public class Png {
 	}
 
 	private ArrayList<Chunk> createApngChunklist(ProgressCallback progressCallback) {
+		@SuppressWarnings("unchecked")
 		ArrayList<Chunk> apngChunklist=(ArrayList<Chunk>)chunklist.clone();
 		int fcTL_sequenceNumber=0;
 		Chunk chunk_acTL=new Chunk_acTL(listPng.size()+1,0);
-		Chunk chunk_fcTL=new Chunk_fcTL(fcTL_sequenceNumber,getWidth(),getHeight(),0,0,delay,1000,Chunk_fcTL.APNG_DISPOSE_OP_NONE,Chunk_fcTL.APNG_BLEND_OP_SOURCE);
-		//		Chunk chunk_fcTL=new Chunk_fcTL(fcTL_sequenceNumber,getWidth(),getHeight(),0,0,delay,1000,Chunk_fcTL.APNG_DISPOSE_OP_NONE,Chunk_fcTL.APNG_BLEND_OP_OVER);
+		Chunk chunk_fcTL=new Chunk_fcTL(fcTL_sequenceNumber,getWidth(),getHeight(),0,0,delay,1000,ApngDisposeOperation.NONE,ApngBlendOperation.SOURCE);
 
 		for(int i=0;i<apngChunklist.size();i++) {
 			if(apngChunklist.get(i) instanceof Chunk_IDAT) {
@@ -330,7 +333,7 @@ public class Png {
 			}
 			Png png=listPng.get(i);
 			ArrayList<Chunk_IDAT> arraylistIdatChunks=png.getAllIdatChunks();
-			chunk_fcTL=new Chunk_fcTL(++fcTL_sequenceNumber,png.getWidth(),png.getHeight(),png.offsetX,png.offsetY,png.getDelay(),1000,Chunk_fcTL.APNG_DISPOSE_OP_NONE,Chunk_fcTL.APNG_BLEND_OP_OVER);
+			chunk_fcTL=new Chunk_fcTL(++fcTL_sequenceNumber,png.getWidth(),png.getHeight(),png.offsetX,png.offsetY,png.getDelay(),1000,ApngDisposeOperation.NONE,ApngBlendOperation.OVER);
 			apngChunklist.add(index_IEND++, chunk_fcTL);
 			if(i>0) {
 				png.getPreviousPng().getImageData().reset();
@@ -340,13 +343,6 @@ public class Png {
 				Chunk chunk_fdAT=new Chunk_fdAT(++fcTL_sequenceNumber,chunk_IDAT);
 				apngChunklist.add(index_IEND++, chunk_fdAT);
 			}
-			//TODO: single
-//			try {
-//				png.savePng(new File("c:/temp/ApngResult/Single_"+(i+1)+".png"));
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
 		}
 		return apngChunklist;
 	}
@@ -376,15 +372,15 @@ public class Png {
 		return chunk_IHDR.getHeight();
 	}
 
-	public int getOffsetX() {
+	int getOffsetX() {
 		return offsetX;
 	}
 
-	public int getOffsetY() {
+	int getOffsetY() {
 		return offsetY;
 	}
 
-	public void setOffset(int offsetX, int offsetY) {
+	void setOffsets(int offsetX, int offsetY) {
 		this.offsetX=offsetX;
 		this.offsetY=offsetY;
 	}
@@ -433,6 +429,7 @@ public class Png {
 	}
 
 	void addChunk(Chunk chunk) {
+		logger.trace("adding chunk: {}",chunk);
 		if(chunklist==null) {
 			chunklist=new ArrayList<Chunk>();
 		}
@@ -442,7 +439,7 @@ public class Png {
 		}
 	}
 
-	public boolean isApng() {
+	boolean isApng() {
 		processImageData();
 		for(int i=0;i<chunklist.size();i++) {
 			if(chunklist.get(i) instanceof Chunk_acTL) {
@@ -476,6 +473,29 @@ public class Png {
 		return -1;
 	}
 
+	/**
+	 * Adds some text to this PNG.
+	 * <br>A 'keyword' is used to categorize the text.
+	 * <br>The PNG specification suggests to use one of these keywords:
+	 * <li>Title
+	 * <li>Author
+	 * <li>Description
+	 * <li>Copyright
+	 * <li>Creation Time
+	 * <li>Software
+	 * <li>Disclaimer
+	 * <li>Warning
+	 * <li>Source
+	 * <li>Comment
+	 * <br>but 'other keywords may be defined for other purposes'.
+	 * <br>Please consult the specification for more information.
+	 * 
+	 * @param keyword A keyword, with a length of 1 to 79
+	 * @param text
+	 * @param compressText <code>true</code> to compress the text, <code>false</code>to not compress the text.
+	 * @throws UnsupportedEncodingException
+	 * @see <a href="https://www.w3.org/TR/PNG/#11keywords">Keywords, Portable Network Graphics (PNG) Specification (Second Edition)</a>
+	 */
 	public void addText(String keyword, String text, boolean compressText) throws UnsupportedEncodingException {
 		int i=findIndexOfIdatChunk();
 		if(i==-1) {
@@ -483,17 +503,39 @@ public class Png {
 		}
 		Chunk chunk;
 		if(compressText) {
-			chunk=new Chunk_zEXt(keyword,text);
+			chunk=new Chunk_zTXt(keyword,text);
 		}else {
 			chunk=new Chunk_tEXt(keyword,text);
 		}
 		chunklist.add(i, chunk);
 	}
 
+	/**
+	 * Adds some text to this PNG.
+	 * <br>A 'keyword' is used to categorize the text.
+	 * <br>The PNG specification suggests to use one of these keywords:
+	 * <li>Title
+	 * <li>Author
+	 * <li>Description
+	 * <li>Copyright
+	 * <li>Creation Time
+	 * <li>Software
+	 * <li>Disclaimer
+	 * <li>Warning
+	 * <li>Source
+	 * <li>Comment
+	 * <br>but 'other keywords may be defined for other purposes'.
+	 * <br>Please consult the specification for more information.
+	 * <br>This method compresses the text only if that results in smaller data size.
+	 * 
+	 * @param keyword A keyword, with a length of 1 to 79
+	 * @param text
+	 * @throws UnsupportedEncodingException
+	 */
 	public void addText(String keyword, String text) throws UnsupportedEncodingException {
 		int i=findIndexOfIdatChunk();
 		Chunk_tEXt chunkText=new Chunk_tEXt(keyword,text);
-		Chunk_zEXt chunkTextCompressed=new Chunk_zEXt(keyword,text);
+		Chunk_zTXt chunkTextCompressed=new Chunk_zTXt(keyword,text);
 		if(chunkTextCompressed.getChunkLength()<chunkText.getChunkLength()) {
 			System.out.println("choosing compressed text");
 			chunklist.add(i, chunkTextCompressed);

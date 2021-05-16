@@ -3,10 +3,10 @@ package lunartools.apng.chunks;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import lunartools.apng.ByteTools;
+import lunartools.ByteTools;
 
 /** 
- * Image Header, shall be the first chunk in the PNG datastream.
+ * Image Header, shall be the first chunk in the PNG data stream.
  * 
  * @see <a href="https://www.w3.org/TR/PNG/#11IHDR">Portable Network Graphics (PNG) Specification (Second Edition)</a>
  * @author Thomas Mattel
@@ -24,33 +24,60 @@ public class Chunk_IHDR extends Chunk{
 	private static final int OFFSET_FILTERMETHOID=DATAOFFSET+		11;//only filter method 0 defined in International Standard
 	private static final int OFFSET_INTERLACEMETHOD=DATAOFFSET+		12;
 
-	public static final int COLOURTYPE_GREYSCALE=0;
-	public static final int COLOURTYPE_TRUECOLOUR=2;
-	public static final int COLOURTYPE_INDEXEDCOLOUR=3;
-	public static final int COLOURTYPE_GREYSCALE_WITH_ALPHA=4;
-	public static final int COLOURTYPE_TRUECOLOUR_WITH_ALPHA=6;
+	public enum ColourType{
+		GREYSCALE(				0,	"Greyscale"),
+		TRUECOLOUR(				2,	"Truecolour"),
+		INDEXEDCOLOUR(			3,	"Indexed colour"),
+		GREYSCALE_WITH_ALPHA(	4,	"Greyscale with alpha"),
+		TRUECOLOUR_WITH_ALPHA(	6,	"Truecolour with alpha");
 
+		private final int value;
+		private String name;
+		
+		private ColourType(int value, String name) {
+			this.value=value;
+			this.name=name;
+		}
+		
+		public String toString() {
+			return name;
+		}
+	}
+	
+	/**
+	 * Creates Image Header chunk from PNG data.
+	 * 
+	 * @param png The complete data of a PNG file.
+	 * @param index Index to the chunk data.
+	 * @param length The chunk length.
+	 */
 	Chunk_IHDR(byte[] png, Integer index,Integer length) {
 		super(png, index,length);
 	}
 
-
-	public Chunk_IHDR(int width, int height, int bitdepth, int colourtype) {
-		int length=LENGTH_CHUNKDATA;
-		setDataLength(length);
+	/**
+	 * Creates new Image Header.
+	 * 
+	 * @param width
+	 * @param height
+	 * @param bitdepth
+	 * @param colourtype
+	 */
+	public Chunk_IHDR(int width, int height, int bitdepth, ColourType colourtype) {
+		setDataLength(LENGTH_CHUNKDATA);
 		try {
 			ByteArrayOutputStream baos=new ByteArrayOutputStream();
-			baos.write(ByteTools.longwordToBytearray(length));
+			baos.write(ByteTools.bLongwordToBytearray(LENGTH_CHUNKDATA));
 			baos.write(TYPE.getBytes());
-			baos.write(ByteTools.longwordToBytearray(width));
-			baos.write(ByteTools.longwordToBytearray(height));
+			baos.write(ByteTools.bLongwordToBytearray(width));
+			baos.write(ByteTools.bLongwordToBytearray(height));
 			baos.write((byte)bitdepth);
-			baos.write((byte)colourtype);
+			baos.write((byte)colourtype.value);
 			baos.write(0);//compression method
 			baos.write(0);//filter method
 			baos.write(0);//interlace method
 
-			baos.write(ByteTools.longwordToBytearray(0));//CRC, calculated later
+			baos.write(ByteTools.bLongwordToBytearray(0));//CRC, calculated later
 			data=baos.toByteArray();
 		} catch (IOException e) {
 			throw new RuntimeException("Could not create "+TYPE+" bytearray",e);
@@ -58,46 +85,42 @@ public class Chunk_IHDR extends Chunk{
 	}
 
 	public int getWidth() {
-		return (int)ByteTools.bytearrayToLongword(data,getIndex()+OFFSET_WIDTH);
+		return (int)ByteTools.bBytearrayToLongword(data,getOffset()+OFFSET_WIDTH);
 	}
 
 	public int getHeight() {
-		return (int)ByteTools.bytearrayToLongword(data,getIndex()+OFFSET_HEIGHT);
+		return (int)ByteTools.bBytearrayToLongword(data,getOffset()+OFFSET_HEIGHT);
 	}
 
 	private int getBitDepth() {
-		return (int)ByteTools.bytearrayToByte(data,getIndex()+OFFSET_BITDEPTH);
+		return (int)ByteTools.bytearrayToByte(data,getOffset()+OFFSET_BITDEPTH);
 	}
 
-	private int getColourType() {
-		return (int)ByteTools.bytearrayToByte(data,getIndex()+OFFSET_COLOURTYPE);
-	}
-
-	private String getColourTypeAsString() {
-		switch(getColourType()) {
-		case 0:
-			return "Greyscale";
-		case 2:
-			return "Truecolour";
-		case 3:
-			return "Indexed colour";
-		case 4:
-			return "Greyscale with alpha";
-		case 6:
-			return "Truecolour with alpha";
-		default:
-			return "UNKNOWN";
+	private ColourType getColourType() {
+		final int colourType=(int)ByteTools.bytearrayToByte(data,getOffset()+OFFSET_COLOURTYPE);
+		if(colourType==			ColourType.GREYSCALE.value) {
+			return 				ColourType.GREYSCALE;
+		}else if(colourType==	ColourType.TRUECOLOUR.value) {
+			return 				ColourType.TRUECOLOUR;
+		}else if(colourType==	ColourType.INDEXEDCOLOUR.value) {
+			return 				ColourType.INDEXEDCOLOUR;
+		}else if(colourType==	ColourType.GREYSCALE_WITH_ALPHA.value) {
+			return 				ColourType.GREYSCALE_WITH_ALPHA;
+		}else if(colourType==	ColourType.TRUECOLOUR_WITH_ALPHA.value) {
+			return 				ColourType.TRUECOLOUR_WITH_ALPHA;
+		}else {
+			return null;
 		}
 	}
 
 	private int getInterlaceMethod() {
-		return (int)ByteTools.bytearrayToByte(data,getIndex()+OFFSET_INTERLACEMETHOD);
+		return (int)ByteTools.bytearrayToByte(data,getOffset()+OFFSET_INTERLACEMETHOD);
 	}
 
 	@Override
 	public String toString() {
 		return TYPE+": length="+getDataLength()+", width="+getWidth()+",  height="+getHeight()
-		+", bitDepth="+getBitDepth()+", colourType="+getColourTypeAsString()
+		+", bitDepth="+getBitDepth()+", colourType="+getColourType()
 		+", interlaceMethod="+getInterlaceMethod()
 		;
 	}

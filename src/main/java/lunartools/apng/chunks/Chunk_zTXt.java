@@ -8,7 +8,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterOutputStream;
 
-import lunartools.apng.ByteTools;
+import lunartools.ByteTools;
 
 /**
  * Compressed textual data
@@ -16,18 +16,46 @@ import lunartools.apng.ByteTools;
  * @see <a href="https://www.w3.org/TR/PNG/#11zTXt">Portable Network Graphics (PNG) Specification (Second Edition)</a>
  * @author Thomas Mattel
  */
-public class Chunk_zEXt extends Chunk{
-	public static final String TYPE="zEXt";
+public class Chunk_zTXt extends Chunk{
+	public static final String TYPE="zTXt";
 	private static final byte NULL_SEPARATOR=0;
 	private static final byte COMPRESSIONMETHOD_DEFLATE=0;
 	private static final int lENGTH_OF_NULL_SEPARATOR=1;
 	private static final int lENGTH_OF_OMPRESSOR_METHOD=1;
 
-	Chunk_zEXt(byte[] png, Integer index,Integer length) {
+	/**
+	 * Creates compressed textual data chunk from PNG data.
+	 * 
+	 * @param png The complete data of a PNG file.
+	 * @param index Index to the chunk data.
+	 * @param length The chunk length.
+	 */
+	Chunk_zTXt(byte[] png, Integer index,Integer length) {
 		super(png, index,length);
 	}
 
-	public Chunk_zEXt(String keyword, String text) throws UnsupportedEncodingException {
+	/**
+	 * Create new compressed textual data chunk.
+	 * <br>The PNG specification suggests to use one of these keywords:
+	 * <li>Title
+	 * <li>Author
+	 * <li>Description
+	 * <li>Copyright
+	 * <li>Creation Time
+	 * <li>Software
+	 * <li>Disclaimer
+	 * <li>Warning
+	 * <li>Source
+	 * <li>Comment
+	 * <br>but 'other keywords may be defined for other purposes'.
+	 * <br>Please consult the specification for more information.
+	 * 
+	 * @param keyword
+	 * @param text
+	 * @throws UnsupportedEncodingException
+	 * @see <a href="https://www.w3.org/TR/PNG/#11keywords">Keywords, Portable Network Graphics (PNG) Specification (Second Edition)</a>
+	 */
+	public Chunk_zTXt(String keyword, String text) throws UnsupportedEncodingException {
 		if(keyword==null) {
 			throw new NullPointerException("keyword");
 		}
@@ -50,14 +78,14 @@ public class Chunk_zEXt extends Chunk{
 		setDataLength(length);
 		try {
 			ByteArrayOutputStream baos=new ByteArrayOutputStream();
-			baos.write(ByteTools.longwordToBytearray(length));
+			baos.write(ByteTools.bLongwordToBytearray(length));
 			baos.write(TYPE.getBytes());
 			baos.write(baKeyword);
 			baos.write(NULL_SEPARATOR);
 			baos.write(COMPRESSIONMETHOD_DEFLATE);
 			baos.write(textCompressed);
 
-			baos.write(ByteTools.longwordToBytearray(0));//CRC, calculated later
+			baos.write(ByteTools.bLongwordToBytearray(0));//CRC, calculated later
 			data=baos.toByteArray();
 		} catch (Exception e) {
 			throw new RuntimeException("Could not create "+TYPE+" bytearray",e);
@@ -74,7 +102,7 @@ public class Chunk_zEXt extends Chunk{
 			deflaterOutputStream.flush();
 			deflaterOutputStream.close();
 		} catch (Exception e) {
-			throw new RuntimeException("Error compressing zEXt text",e);
+			throw new RuntimeException("Error compressing "+TYPE+" text",e);
 		}
 		return baos.toByteArray();
 	}
@@ -89,7 +117,7 @@ public class Chunk_zEXt extends Chunk{
 			inflaterOutputStream.flush();
 			inflaterOutputStream.close();
 		} catch (Exception e) {
-			throw new RuntimeException("Error decompressing zEXt text",e);
+			throw new RuntimeException("Error decompressing "+TYPE+" text",e);
 		}
 		return baos.toByteArray();
 	}
@@ -107,7 +135,7 @@ public class Chunk_zEXt extends Chunk{
 		byte[] chunkData=getChunkData();
 		int i=indexOfNullSeparator(chunkData);
 		if(i==-1) {
-			throw new RuntimeException("no null separator in zEXt chunk");
+			throw new RuntimeException("no null separator in "+TYPE+" chunk");
 		}
 		try {
 			return new String(Arrays.copyOfRange(chunkData, 0, i),"ISO-8859-1");
@@ -120,7 +148,7 @@ public class Chunk_zEXt extends Chunk{
 		byte[] chunkData=getChunkData();
 		int i=indexOfNullSeparator(chunkData);
 		if(i==-1) {
-			throw new RuntimeException("no null separator in zEXt chunk");
+			throw new RuntimeException("no null separator in "+TYPE+" chunk");
 		}
 		try {
 			return new String(decompress(Arrays.copyOfRange(chunkData, i+lENGTH_OF_NULL_SEPARATOR+lENGTH_OF_OMPRESSOR_METHOD, chunkData.length)),"ISO-8859-1");
