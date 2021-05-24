@@ -1,5 +1,7 @@
 package lunartools.apng;
 
+import lunartools.ImageTools;
+
 /**
  * Optimizes the image to reduce filesize.
  * <li>replacing pixel, that have not changed, with transparent pixel
@@ -27,22 +29,22 @@ public class ImagedataOptimizer {
 		Png pngPrevious=png.getPreviousPng();
 		ImageData imageDataPrevious=pngPrevious.getImageData();
 
-		Color transparentColour=animData.getUnusedColour();
+		ColourRGB transparentColour=animData.getUnusedColour();
 		int[] intImage=imageData.getRgbInts().clone();
 		int[] intReference=imageDataPrevious.getRgbInts().clone();
 
 		int minimumNumberOfTransparentPixel=png.getBuilder().getMinimumNumberOfTransparentPixel();
 		if(minimumNumberOfTransparentPixel>0){
-			replaceUnchangedPixelWithTransparentPixelNew(intImage,intReference,transparentColour.getColor(),minimumNumberOfTransparentPixel);
-			intImage=cropTransparentPixel(intImage,transparentColour.getColor());
+			replaceUnchangedPixelWithTransparentPixelNew(intImage,intReference,transparentColour.getColour(),minimumNumberOfTransparentPixel);
+			intImage=cropTransparentPixel(intImage,transparentColour.getColour());
 		}else {
 			intImage=cropUnchangedPixel(intImage,intReference);
 		}
 		
 		if(animData.getNumberOfColours()>256) {
-			this.imagedata=ImageTools.convertIntRGBtoByteRGB(intImage);
+			this.imagedata=ImageTools.createByteRGBfromIntRGB(intImage);
 		}else if(animData.isGreyscale()){
-			this.imagedata=ImageTools.convertIntGreyscaleToByteGreyscale(intImage);
+			this.imagedata=ImageTools.createByteGreyscaleFromIntGreyscale(intImage);
 		}else {
 			this.imagedata=imageData.convertToPaletteImage(intImage);
 		}

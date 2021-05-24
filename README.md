@@ -17,3 +17,7 @@ Features:
 <u>Please notes: As long as version 1.0 is not final, i feel free to change the inferface any time :-)</u>
 
 For more details see the [wiki](https://github.com/Moon70/APNG-builder/wiki) pages, please.
+
+
+
+Recent changes: Added some dithering algorithm (see [GPAC](https://github.com/Moon70/GPAC)).

@@ -48,17 +48,17 @@ public class PngService {
 			if(numberOfColours>maxPaletteColours) {
 				bitdepth=8;
 				colourtype=ColourType.TRUECOLOUR;
-				Color unusedColour=animData.getUnusedColour();
+				ColourRGB unusedColour=animData.getUnusedColour();
 				chunk_tRNS=new Chunk_tRNS(unusedColour.getRed(),unusedColour.getGreen(),unusedColour.getBlue());
 			}else if(animData.isGreyscale()) {
 				bitdepth=8;
 				colourtype=ColourType.GREYSCALE;
-				Color unusedColour=animData.getUnusedColour();
-				chunk_tRNS=new Chunk_tRNS(unusedColour.getColor());
+				ColourRGB unusedColour=animData.getUnusedColour();
+				chunk_tRNS=new Chunk_tRNS(unusedColour.getColour());
 			}else {
 				bitdepth=8;
 				colourtype=ColourType.INDEXEDCOLOUR;
-				ArrayList<Color> palette=animData.getPalette();
+				ArrayList<ColourRGB> palette=animData.getPalette();
 				chunk_PLTE=new Chunk_PLTE(palette);
 				int[] alphaPalette=new int[palette.size()];
 				for(int i=1;i<alphaPalette.length;i++) {
@@ -81,7 +81,6 @@ public class PngService {
 				logger.trace("create secondary PNG");
 				ImagedataOptimizer imagedataOptimizer=new ImagedataOptimizer();
 				imagedataOptimizer.optimizeImage(png);
-				//System.out.println("imagedataOptimizer: "+imagedataOptimizer);
 				baImageRaw=new PngEncoder().encodePng(imagedataOptimizer.getImagedata(),imagedataOptimizer.getwidth(),imagedataOptimizer.getHeight(),animData.getBytesPerPixel());
 				chunk_IHDR=new Chunk_IHDR(imagedataOptimizer.getwidth(), imagedataOptimizer.getHeight(), bitdepth, colourtype);
 				png.setOffsets(imagedataOptimizer.getOffsetX(),imagedataOptimizer.getOffsetY());
@@ -96,10 +95,10 @@ public class PngService {
 
 			ByteArrayOutputStream baos=new ByteArrayOutputStream();
 			Deflater deflater=new Deflater(Deflater.BEST_COMPRESSION,false);
-//			deflater.setStrategy(Deflater.HUFFMAN_ONLY);
+			//			deflater.setStrategy(Deflater.HUFFMAN_ONLY);
 			deflater.setStrategy(Deflater.FILTERED);
-//			deflater.setStrategy(Deflater.DEFAULT_STRATEGY);
-//			deflater.setStrategy(Deflater.NO_FLUSH);
+			//			deflater.setStrategy(Deflater.DEFAULT_STRATEGY);
+			//			deflater.setStrategy(Deflater.NO_FLUSH);
 			DeflaterOutputStream deflaterOutputStream=new DeflaterOutputStream(baos,deflater);
 			deflaterOutputStream.write(baImageRaw);
 			deflaterOutputStream.finish();

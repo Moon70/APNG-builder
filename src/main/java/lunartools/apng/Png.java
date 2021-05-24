@@ -537,10 +537,8 @@ public class Png {
 		Chunk_tEXt chunkText=new Chunk_tEXt(keyword,text);
 		Chunk_zTXt chunkTextCompressed=new Chunk_zTXt(keyword,text);
 		if(chunkTextCompressed.getChunkLength()<chunkText.getChunkLength()) {
-			System.out.println("choosing compressed text");
 			chunklist.add(i, chunkTextCompressed);
 		}else {
-			System.out.println("choosing plain text");
 			chunklist.add(i, chunkText);
 		}
 	}

@@ -2,7 +2,10 @@ package lunartools.apng;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+
+import lunartools.ImageTools;
 
 /**
  * The imagedata of the 'source-image' used to create the Png object.
@@ -49,7 +52,11 @@ class ImageData {
 			if(imagesource instanceof BufferedImage) {
 				bufferedImage=(BufferedImage)imagesource;
 			}else if(imagesource instanceof File) {
-				bufferedImage=ImageTools.createBufferedImageFromFile((File)imagesource);
+				try {
+					bufferedImage=ImageTools.getBufferedImage_intRGB((File)imagesource);
+				} catch (IOException e) {
+					throw new RuntimeException("error reading BufferedImage",e);
+				}
 			}
 		}
 		return bufferedImage;
@@ -72,16 +79,16 @@ class ImageData {
 			int[] pixel=getRgbInts();
 			byte[] bytes=new byte[pixel.length];
 			int[] hashtable=new int[0x1000000];
-			ArrayList<Color> palette=png.getAnimData().getPalette();
+			ArrayList<ColourRGB> palette=png.getAnimData().getPalette();
 			for(int i=0;i<palette.size();i++) {
-				hashtable[palette.get(i).getColor()]=i;
+				hashtable[palette.get(i).getColour()]=i;
 			}
 			for(int i=0;i<pixel.length;i++) {
 				bytes[i]=(byte)hashtable[pixel[i]];
 			}
 			return bytes;
 		case GREYSCALE:
-			return ImageTools.convertIntGreyscaleToByteGreyscale(getRgbInts());
+			return ImageTools.createByteGreyscaleFromIntGreyscale(getRgbInts());
 		default:
 			throw new RuntimeException("not supported colour type");
 		}
@@ -96,9 +103,9 @@ class ImageData {
 	byte[] convertToPaletteImage(int[] pixel) {
 		byte[] bytes=new byte[pixel.length];
 		int[] hashtable=new int[0x1000000];
-		ArrayList<Color> palette=png.getAnimData().getPalette();
+		ArrayList<ColourRGB> palette=png.getAnimData().getPalette();
 		for(int i=0;i<palette.size();i++) {
-			hashtable[palette.get(i).getColor()]=i;
+			hashtable[palette.get(i).getColour()]=i;
 		}
 		for(int i=0;i<pixel.length;i++) {
 			bytes[i]=(byte)hashtable[pixel[i]];

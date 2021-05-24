@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import lunartools.ByteTools;
-import lunartools.apng.Color;
+import lunartools.apng.ColourRGB;
 
 /**
  * Palette
@@ -33,7 +33,7 @@ public class Chunk_PLTE extends Chunk{
 	 * 
 	 * @param palette An array of transparent colours
 	 */
-	public Chunk_PLTE(ArrayList<Color> palette) {
+	public Chunk_PLTE(ArrayList<ColourRGB> palette) {
 		int length=palette.size()*3;
 		setDataLength(length);
 		try {
@@ -41,7 +41,7 @@ public class Chunk_PLTE extends Chunk{
 			baos.write(ByteTools.bLongwordToBytearray(length));
 			baos.write(TYPE.getBytes());
 			for(int i=0;i<palette.size();i++) {
-				Color color=palette.get(i);
+				ColourRGB color=palette.get(i);
 				baos.write((byte)color.getRed());
 				baos.write((byte)color.getGreen());
 				baos.write((byte)color.getBlue());

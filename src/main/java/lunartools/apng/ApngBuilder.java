@@ -17,12 +17,49 @@ import org.slf4j.LoggerFactory;
  */
 public class ApngBuilder {
 	private static Logger logger = LoggerFactory.getLogger(ApngBuilder.class);
+	private QuantizerAlgorithm quantizerAlgorithm=QuantizerAlgorithm.MEDIAN_CUT;
+	private DitheringAlgorithm ditheringAlgorithm=DitheringAlgorithm.SIERRA;
 	private boolean flagPngEncoderEnabled=true;
 	private boolean flagReencodePngFilesEnabled=true;
 	private int minimumNumberOfTransparentPixel=3;
 	private int numberOfTruecolourBits=8;
 	private int maximumNumberOfColours;
 	private int imageDataChunkSize=65536;
+	
+	public enum QuantizerAlgorithm{
+		MEDIAN_CUT
+	}
+	
+	public enum DitheringAlgorithm {
+		NO_DITHERING,
+		SIMPLE_DITHERING1,
+		FLOYD_STEINBERG,
+		JARVIS_JUDICE_NINKE,
+		STUCKI,
+		ATKINSON,
+		BURKES,
+		SIERRA,
+		TWO_ROW_SIERRA,
+		SIERRA_LITE
+	}
+
+	public ApngBuilder setQuantizerAlgorithm(QuantizerAlgorithm quantizerAlgorithm) {
+		this.quantizerAlgorithm=quantizerAlgorithm;
+		return this;
+	}
+	
+	QuantizerAlgorithm getQuantizerAlgorithm() {
+		return quantizerAlgorithm;
+	}
+	
+	public ApngBuilder setDitheringAlgorithm(DitheringAlgorithm ditheringAlgorithm) {
+		this.ditheringAlgorithm=ditheringAlgorithm;
+		return this;
+	}
+
+	DitheringAlgorithm getDitheringAlgorithm() {
+		return ditheringAlgorithm;
+	}
 	
 	/**
 	 * To enable/disable the PNG encoder.

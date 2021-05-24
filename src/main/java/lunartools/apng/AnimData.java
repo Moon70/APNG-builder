@@ -6,7 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import lunartools.apng.chunks.Chunk_IHDR.ColourType;
-import lunartools.colorquantizer.GPAC_experimental;
+import lunartools.colorquantizer.DitheringAlgorithm;
+import lunartools.colorquantizer.GPAC;
+import lunartools.colorquantizer.QuantizerAlgorithm;
 
 /**
  * The common data of all images of this animation (APNG).
@@ -17,11 +19,11 @@ class AnimData {
 	private static Logger logger = LoggerFactory.getLogger(AnimData.class);
 	private Png png;
 	private int numberOfColours;
-	private Color unusedColour;
+	private ColourRGB unusedColour;
 	private ColourType colourtype;
 	private int bytesPerPixel;
 	private boolean flagIsGreyscale;
-	private ArrayList<Color> palette;
+	private ArrayList<ColourRGB> palette;
 
 	AnimData(Png png) {
 		this.png=png;
@@ -57,7 +59,7 @@ class AnimData {
 	 * 
 	 * @return the common colour palette of all images of this animation, or null
 	 */
-	ArrayList<Color> getPalette(){
+	ArrayList<ColourRGB> getPalette(){
 		if(numberOfColours==0) {
 			analyzeImages();
 		}
@@ -69,7 +71,7 @@ class AnimData {
 	 * 
 	 * @return An unused colour, or <code>null</code> if there is no unused colour
 	 */
-	Color getUnusedColour() {
+	ColourRGB getUnusedColour() {
 		if(unusedColour==null) {
 			analyzeImages();
 		}
@@ -112,24 +114,30 @@ class AnimData {
 
 		int maximumNumberOfColours=png.getFirstPng().getBuilder().getMaximumNumberOfColours();
 		if(maximumNumberOfColours!=0) {
+			ArrayList<int[]> arraylistImagesPixelInts = new ArrayList<int[]>();
 			ArrayList<ImageData> allImagedata=png.findAllImagedata();
-			int[] colourCount=new int[0x1000000];
+//			int[] colourCount=new int[0x1000000];
+			int width=0;
+			int height=0;
 			for(int k=0;k<allImagedata.size();k++) {
 				ImageData imageData=allImagedata.get(k);
 				int[] imageRgbInts=imageData.getRgbInts();
-				for(int i=0;i<imageRgbInts.length;i++) {
-					colourCount[imageRgbInts[i]]++;
-				}
+				width=imageData.getWidth();
+				height=imageData.getHeight();
+//				for(int i=0;i<imageRgbInts.length;i++) {
+//					colourCount[imageRgbInts[i]]++;
+//				}
+				arraylistImagesPixelInts.add(imageRgbInts);
 			}
 			logger.debug("calling colour quantizer");
-			new GPAC_experimental().quantizeColors(colourCount,maximumNumberOfColours);
-			for(int k=0;k<allImagedata.size();k++) {
-				ImageData imageData=allImagedata.get(k);
-				int[] imageRgbInts=imageData.getRgbInts();
-				for(int i=0;i<imageRgbInts.length;i++) {
-					imageRgbInts[i]=colourCount[imageRgbInts[i]];
-				}
-			}
+			quantizeColours(arraylistImagesPixelInts,width,height,maximumNumberOfColours);
+//			for(int k=0;k<allImagedata.size();k++) {
+//				ImageData imageData=allImagedata.get(k);
+//				int[] imageRgbInts=imageData.getRgbInts();
+//				for(int i=0;i<imageRgbInts.length;i++) {
+//					imageRgbInts[i]=colourCount[imageRgbInts[i]];
+//				}
+//			}
 			analyzeColours();
 			return;
 		}
@@ -150,7 +158,7 @@ class AnimData {
 		for(int i=0;i<256;i++) {
 			int pixel=(i<<16)|(i<<8)|i;
 			if(colourCount[pixel]==0) {
-				unusedColour=new Color(pixel);
+				unusedColour=new ColourRGB(pixel);
 				logger.debug("unused grey colour found: {}",Integer.toHexString(pixel));
 				break;
 			}
@@ -158,7 +166,7 @@ class AnimData {
 		if(unusedColour==null) {
 			for(int i=0;i<colourCount.length;i++) {
 				if(colourCount[i]==0) {
-					unusedColour=new Color(i);
+					unusedColour=new ColourRGB(i);
 					logger.debug("unused RGB colour found: {}",Integer.toHexString(i));
 					break;
 				}
@@ -166,13 +174,13 @@ class AnimData {
 		}
 
 		int count=0;
-		ArrayList<Color> palette=new ArrayList<Color>();
-		palette.add(new Color(0));
+		ArrayList<ColourRGB> palette=new ArrayList<ColourRGB>();
+		palette.add(new ColourRGB(0));
 		boolean isGreyscale=true;
 		for(int i=0;i<colourCount.length;i++) {
 			if(colourCount[i]>0) {
 				if(palette.size()<256) {
-					Color color=new Color(i,colourCount[i]);
+					ColourRGB color=new ColourRGB(i);
 					palette.add(color);
 					isGreyscale=isGreyscale&color.isGrey();
 				}
@@ -212,6 +220,55 @@ class AnimData {
 		}
 	}
 
+	private void quantizeColours(ArrayList<int[]> arraylistImagesPixelInts,int width,int height,int numberOfColours) {
+		GPAC gpac=new GPAC();
+		ApngBuilder builder=png.getFirstPng().getBuilder();
+		
+		switch(builder.getQuantizerAlgorithm()) {
+		case MEDIAN_CUT:
+			gpac.setQuantizerAlgorithm(QuantizerAlgorithm.MEDIAN_CUT);
+			break;
+		default:
+			throw new RuntimeException("colour quantizer algorithm not supported: "+builder.getQuantizerAlgorithm());
+		}
+		
+		switch(builder.getDitheringAlgorithm()) {
+		case NO_DITHERING:
+			gpac.setDitheringAlgorithm(DitheringAlgorithm.NO_DITHERING);
+			break;
+		case SIMPLE_DITHERING1:
+			gpac.setDitheringAlgorithm(DitheringAlgorithm.SIMPLE_DITHERING1);
+			break;
+		case FLOYD_STEINBERG:
+			gpac.setDitheringAlgorithm(DitheringAlgorithm.FLOYD_STEINBERG);
+			break;
+		case JARVIS_JUDICE_NINKE:
+			gpac.setDitheringAlgorithm(DitheringAlgorithm.JARVIS_JUDICE_NINKE);
+			break;
+		case STUCKI:
+			gpac.setDitheringAlgorithm(DitheringAlgorithm.STUCKI);
+			break;
+		case ATKINSON:
+			gpac.setDitheringAlgorithm(DitheringAlgorithm.ATKINSON);
+			break;
+		case BURKES:
+			gpac.setDitheringAlgorithm(DitheringAlgorithm.BURKES);
+			break;
+		case SIERRA:
+			gpac.setDitheringAlgorithm(DitheringAlgorithm.SIERRA);
+			break;
+		case TWO_ROW_SIERRA:
+			gpac.setDitheringAlgorithm(DitheringAlgorithm.TWO_ROW_SIERRA);
+			break;
+		case SIERRA_LITE:
+			gpac.setDitheringAlgorithm(DitheringAlgorithm.SIERRA_LITE);
+			break;
+		default:
+			throw new RuntimeException("dithering algorithm not supported: "+builder.getDitheringAlgorithm());
+		}
+		gpac.quantizeColours(arraylistImagesPixelInts,width,height,numberOfColours);
+	}
+	
 	@Override
 	public String toString() {
 		StringBuffer sb=new StringBuffer();
