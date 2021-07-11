@@ -389,7 +389,7 @@ public class Png {
 		this.delay=delay;
 	}
 
-	private int getDelay() {
+	public int getDelay() {
 		return delay;
 	}
 
