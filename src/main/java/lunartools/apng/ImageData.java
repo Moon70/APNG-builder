@@ -53,7 +53,7 @@ class ImageData {
 				bufferedImage=(BufferedImage)imagesource;
 			}else if(imagesource instanceof File) {
 				try {
-					bufferedImage=ImageTools.getBufferedImage_intRGB((File)imagesource);
+					bufferedImage=ImageTools.createBufferedImage_intRGB((File)imagesource);
 				} catch (IOException e) {
 					throw new RuntimeException("error reading BufferedImage",e);
 				}

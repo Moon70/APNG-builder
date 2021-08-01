@@ -215,32 +215,32 @@ public class ApngBuilder {
 	 * <br>The file can be any image file that Java can read.
 	 * <br>This PNG object can be used to add another PNG objects, to create an APNG animation.
 	 * 
-	 * @param image Any image file that Java can read
+	 * @param imagefile Any image file that Java can read
 	 * @return
 	 * @throws IOException
 	 */
- 	public Png buildPng(File image) throws IOException{
-		if(image==null) {
+ 	public Png buildPng(File imagefile) throws IOException{
+		if(imagefile==null) {
 			throw new NullPointerException("image");
 		}
-		if(!image.exists()) {
-			throw new FileNotFoundException(image.getAbsolutePath());
+		if(!imagefile.exists()) {
+			throw new FileNotFoundException(imagefile.getAbsolutePath());
 		}
-		return new Png(this,image);
+		return new Png(this,imagefile);
 	}
 
 	/**
 	 * Builds a PNG from a BufferedImage.
 	 * <br>This PNG object can be used to add another PNG objects, to create an APNG animation.
 	 * 
-	 * @param image the BufferedImage to build the Png object
+	 * @param bufferedImage the BufferedImage to build the Png object
 	 * @return the Png object built from the BufferedImage
 	 */
-	public Png buildPng(BufferedImage image){
-		if(image==null) {
+	public Png buildPng(BufferedImage bufferedImage){
+		if(bufferedImage==null) {
 			throw new NullPointerException("image");
 		}
-		return new Png(this,image);
+		return new Png(this,bufferedImage);
 	}
 
 	/**
@@ -250,19 +250,19 @@ public class ApngBuilder {
 	 * <br>The same delay is used for the whole animation.
 	 * 
 	 * 
-	 * @param images Any image files that Java can read
+	 * @param imagefiles Any image files that Java can read
 	 * @param delay Delay in milliseconds, the time to wait before the next image of the animation is shown
 	 * @return
 	 * @throws IOException
 	 */
-	public Png buildPng(File[] images, int delay) throws IOException{
-		if(images==null) {
+	public Png buildPng(File[] imagefiles, int delay) throws IOException{
+		if(imagefiles==null) {
 			throw new NullPointerException();
 		}
-		Png apng=buildPng(images[0]);
+		Png apng=buildPng(imagefiles[0]);
 		apng.setDelay(delay);
-		for(int i=1;i<images.length;i++) {
-			Png png=buildPng(images[i]);
+		for(int i=1;i<imagefiles.length;i++) {
+			Png png=buildPng(imagefiles[i]);
 			apng.addPng(png);
 			png.setDelay(delay);
 		}
@@ -272,11 +272,12 @@ public class ApngBuilder {
 	public String toString() {
 		StringBuffer sb=new StringBuffer();
 		sb.append(this.getClass().getSimpleName()+": ");
-		sb.append("PngEncoder enabled: "+flagPngEncoderEnabled);
+		sb.append("TrueColour bits: "+numberOfTruecolourBits);
+		sb.append(", PngEncoder enabled: "+flagPngEncoderEnabled);
 		sb.append(", ReEncode PNG: "+flagReencodePngFilesEnabled);
 		sb.append(", TransparentPixel: "+minimumNumberOfTransparentPixel);
-		sb.append(", TrueColour bits: "+numberOfTruecolourBits);
 		sb.append(", NumberOfColours: "+(maximumNumberOfColours==0?"TrueColour":maximumNumberOfColours));
+		sb.append(", ImageDataChunkSize: "+imageDataChunkSize);
 		return sb.toString();
 	}
 }
