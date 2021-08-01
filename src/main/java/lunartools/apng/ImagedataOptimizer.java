@@ -75,17 +75,14 @@ public class ImagedataOptimizer {
 	private int[] cropTransparentPixel(int[] intImage, int transparentColour) {
 		int top;
 		searchTopBorder:
-			for(top=0;top<height;top++) {
+			for(top=0;top<height-1;top++) {//-1: when cropping two identical images, at least the last line should remain
 				for(int x=0;x<width;x++) {
 					if(intImage[top*width+x]!=transparentColour) {
 						break searchTopBorder;
 					}
 				}
 			}
-//TODO: This is a temporary fix to avoid an overflow when cropping two ident images. In a later version, an ident image will be eliminated so that this fix can be removed
-if(top==height) {
-	top--;
-}
+		
 		int bottom;
 		searchBottomBorder:
 			for(bottom=height-1;bottom>top;bottom--) {
@@ -98,7 +95,7 @@ if(top==height) {
 
 		int left;
 		searchLeftBorder:
-			for(left=0;left<width;left++) {
+			for(left=0;left<width-1;left++) {//-1: when cropping two identical images, at least the last column should remain
 				for(int y=top;y<=bottom;y++) {
 					int index=y*width+left;
 					if(intImage[index]!=transparentColour) {
@@ -106,10 +103,7 @@ if(top==height) {
 					}
 				}
 			}
-//TODO: This is a temporary fix to avoid an overflow when cropping two ident images. In a later version, an ident image will be eliminated so that this fix can be removed
-if(left==width) {
-	left--;
-}
+
 		int right;
 		searchRightBorder:
 			for(right=width-1;right>left;right--) {
@@ -140,17 +134,14 @@ if(left==width) {
 	private int[] cropUnchangedPixel(int[] intImage, int[] intImageReference) {
 		int top;
 		searchTopBorder:
-			for(top=0;top<height;top++) {
+			for(top=0;top<height-1;top++) {//-1: when cropping two identical images, at least the last line should remain
 				for(int x=0;x<width;x++) {
 					if(intImage[top*width+x]!=intImageReference[top*width+x]) {
 						break searchTopBorder;
 					}
 				}
 			}
-//TODO: This is a temporary fix to avoid an overflow when cropping two ident images. In a later version, an ident image will be eliminated so that this fix can be removed
-if(top==height) {
-	top--;
-}
+
 		int bottom;
 		searchBottomBorder:
 			for(bottom=height-1;bottom>top;bottom--) {
@@ -163,7 +154,7 @@ if(top==height) {
 
 		int left;
 		searchLeftBorder:
-			for(left=0;left<width;left++) {
+			for(left=0;left<width-1;left++) {//-1: when cropping two identical images, at least the last column should remain
 				for(int y=top;y<=bottom;y++) {
 					int index=y*width+left;
 					if(intImage[index]!=intImageReference[index]) {
@@ -171,10 +162,7 @@ if(top==height) {
 					}
 				}
 			}
-//TODO: This is a temporary fix to avoid an overflow when cropping two ident images. In a later version, an ident image will be eliminated so that this fix can be removed
-if(left==width) {
-	left--;
-}
+
 		int right;
 		searchRightBorder:
 			for(right=width-1;right>left;right--) {

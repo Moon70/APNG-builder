@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterOutputStream;
 
@@ -205,12 +206,22 @@ public class Png {
 			throw new RuntimeException("adding apng not supported yet");
 		}
 		int i=listPng.size();
-		png.setFirstPng(this);
+
+		Png pngPrevious=null;
 		if(i==0) {
-			png.setPreviousPng(this);
+			pngPrevious=this;
 		}else {
-			png.setPreviousPng(listPng.get(i-1));
+			pngPrevious=listPng.get(i-1);
 		}
+		int[] rgbIntsPrevious=pngPrevious.getImageData().getRgbInts();
+		int[] rgbIntsPngToAdd=png.getImageData().getRgbInts();
+		if(Arrays.equals(rgbIntsPrevious,rgbIntsPngToAdd)) {
+			this.setDelay(this.getDelay()+png.getDelay());
+			logger.trace("skipped identical image");
+			return;
+		}
+		png.setFirstPng(this);
+		png.setPreviousPng(pngPrevious);
 		listPng.add(png);
 	}
 
